@@ -371,7 +371,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		}
 
 		// Check if we don't reach the maximum number of chunck
-		size_t chunksCount64 = 1 + fullData.size() / PONK_MAX_DATA_BYTES_PER_PACKET;
+		size_t chunksCount64 = 1 + fullData.size() / (PONK_MAX_DATA_BYTES_PER_PACKET-sizeof(GeomUdpHeader));
 		if (chunksCount64 > 255) {
 			throw std::runtime_error("Protocol doesn't accept sending "
 				"a packet that would be splitted "
