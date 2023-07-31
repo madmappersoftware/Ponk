@@ -3,11 +3,15 @@ Open Protocol to transmit **P**athes **O**ver **N**etwor**K**
 
 PONK (**P**athes **O**ver **N**etwor**K**) is a minimal protocol to transfer 2D colored pathes from a source to a receiver. It has been developped to transfer laser path from a software to another over network using UDP.
 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=VmzsDqeO2RQ" target="_blank">
+ <img src="https://github.com/madmappersoftware/Ponk/assets/16778892/cfe13d85-6346-43b5-9ecd-05a04f387b16" alt="Watch the video" width="1280" height="720" border="10" />
+</a>
+
 ## Requirements are:
 - Transfer over network of frames composed of 2D geometry path with colors along the path
 - Make it simple to implement on both sides
-- Make it work on almost any network - no specific hardware requirement or os settings tricks
-- Make it extensible while not increasing bandwidth requirements in most common cases
+- Make it work on almost any network - no specific hardware or OS requirement
+- Make it extensible while not increasing bandwidth in most common cases
 - Avoid using unecessary bandwidth:
   - For laser, having more than 8 bits per component colors is mostly useless (laser projector diodes have a very poor definition in low values anyway)
   - Support multiple formats to adapt bandwidth to project requirements
@@ -16,8 +20,8 @@ PONK (**P**athes **O**ver **N**etwor**K**) is a minimal protocol to transfer 2D 
   - Receiver must be able to detect network issue and ignore a frame if something when wrong (CRC)
 
 ## Implementation in Sender
-- A software can send instanciate multiple senders.
-- A sender is identified by a 32 bits number which can be a  random generated value when instanciating the sending component
+- A software can instanciate multiple senders (different streams)
+- A sender is identified by a 32 bits number which can be a random generated value when instanciating the sending component
 - It also transmits a "sender name" string (UTF8) that can be used to display a readable source name is the receiving application.
 - The stream identifier should not change when reloading a project file so the receiver canreconnect the stream. Changing the stream name should not affect existing connection (the receiver must use the integer identifier, the string is used to display a meaningful text only)
 
