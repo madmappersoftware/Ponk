@@ -3,9 +3,7 @@ Open Protocol to transmit **P**athes **O**ver **N**etwor**K**
 
 PONK (**P**athes **O**ver **N**etwor**K**) is a minimal protocol to transfer 2D colored pathes from a source to a receiver. It has been developped to transfer laser path from a software to another over network using UDP.
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=VmzsDqeO2RQ" target="_blank">
- <img src="https://github.com/madmappersoftware/Ponk/assets/16778892/cfe13d85-6346-43b5-9ecd-05a04f387b16" alt="Watch the video" width="1280" height="720" border="10" />
-</a>
+[![Demo](https://github.com/madmappersoftware/Ponk/assets/16778892/cfe13d85-6346-43b5-9ecd-05a04f387b16)](https://www.youtube.com/watch?v=VmzsDqeO2RQ)
 
 ## Requirements are:
 - Transfer over network of frames composed of 2D geometry path with colors along the path
