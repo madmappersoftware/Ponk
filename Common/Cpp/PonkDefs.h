@@ -14,7 +14,7 @@
  *          diodes have a very poor definition in low values anyway)
  *          - Support multiple formats to adapt bandwidth to project requirements
  *      - If the frame to transmit is too long to fit a single UDP packet, it should be cut in multiple
- *        chunks. PONK_MAX_DATA_BYTES_PER_PACKET is set to 8192 by default. This value should make
+ *        chunks. PONK_MAX_CHUNK_SIZE is set to 8192 by default. This value should make
  *        it work on all popular OS.
  *      - The sender should be able to attach "meta data" to each path transmitted, that the receiver
  *        might handle for specific behaviors. When rasterizing a path for laser rendering
@@ -131,7 +131,7 @@
 #define PONK_DATA_FORMAT_XYRGB_U16 0
 #define PONK_DATA_FORMAT_XY_F32_RGB_U8 1
 // Maximum chunk size
-#define PONK_MAX_DATA_BYTES_PER_PACKET 8192
+#define PONK_MAX_CHUNK_SIZE 8192
 // Geom UDP port = 5583
 #define PONK_PORT 5583
 

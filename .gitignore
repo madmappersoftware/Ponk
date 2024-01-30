@@ -361,3 +361,9 @@ xcuserdata
 # Touch designer known plugins file
 Plugins.json
 Touch Plugin/Sample Project/Plugins/Plugins.json
+
+# CMake
+CMakeFiles
+CMakeCache.txt
+*.cmake
+Makefile

@@ -183,7 +183,7 @@ int main()
         #endif
 
         // Compute necessary chunk count
-        size_t chunksCount64 = 1 + fullData.size() / (PONK_MAX_DATA_BYTES_PER_PACKET-sizeof(GeomUdpHeader));
+        size_t chunksCount64 = 1 + fullData.size() / (PONK_MAX_CHUNK_SIZE-sizeof(GeomUdpHeader));
         if (chunksCount64 > 255) {
             throw std::runtime_error("Protocol doesn't accept sending "
                                      "a packet that would be splitted "
@@ -214,7 +214,7 @@ int main()
 
             // Prepare buffer
             std::vector<unsigned char> packet;
-            size_t dataBytesForThisChunk = std::min<size_t>(fullData.size()-written, PONK_MAX_DATA_BYTES_PER_PACKET);
+            size_t dataBytesForThisChunk = std::min<size_t>(fullData.size()-written,PONK_MAX_CHUNK_SIZE-sizeof(GeomUdpHeader));
             packet.resize(sizeof(GeomUdpHeader) + dataBytesForThisChunk);
             // Write header
             memcpy(&packet[0],&header,sizeof(GeomUdpHeader));
