@@ -73,7 +73,7 @@ int main()
         // If we actually received part of a frame, we shouldn't received a different frame number
         if (currentFrameNumber != -1 && header->frameNumber != currentFrameNumber) {
             std::cout << "Error: frame number has changed to " << std::to_string(header->frameNumber)
-                      << " but we haved received all chunks from frame number " << std::to_string(currentFrameNumber)
+                      << " but we have not received all chunks from frame number " << std::to_string(currentFrameNumber)
                       << ". Resetting chunks data" << std::endl;
             assert(false);
             // Reset state. Note that ideally we shouldn't skip all chunks from a frame if we receive the first chunk
@@ -145,7 +145,7 @@ int main()
         if (receivedAllChunksYet) {
             // Put all frame data together in a single buffer
             std::vector<unsigned char> allData;
-            allData.reserve(255*PONK_MAX_DATA_BYTES_PER_PACKET);
+            allData.reserve(255*PONK_MAX_CHUNK_SIZE);
             for (int i=0; i<header->chunkCount; i++) {
                 allData.insert(allData.end(),chunksData[i].begin(),chunksData[i].end());
             }
@@ -163,8 +163,7 @@ int main()
             // Parse Frame Data
             const auto dataSize = allData.size();
             if (dataSize < 1) {
-                std::cout << "Error: frame data is empty";
-                assert(false);
+                std::cout << "Error: frame data is empty" << std::endl;
                 continue;
             }
 
@@ -174,7 +173,7 @@ int main()
                 computedCrc += v;
             }
             if (computedCrc != header->dataCrc) {
-                std::cout << "Error: invalid data CRC, ignoring frame";
+                std::cout << "Error: invalid data CRC, ignoring frame" << std::endl;
                 assert(false);
                 continue;
             }

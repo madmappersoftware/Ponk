@@ -103,6 +103,9 @@
  *          - MAXSPEED: Floating point number defining the maximum laser scan speed for this shape. Normal value is 1.0
  *            and is a compromise between scan speed and scan accuracy at a reasonable projection angle. A value of 2 will
  *            tell MadMapper it can scan twice faster when rendering this shape.
+ *          - FIXSPEED: Floating point number defining the speed at which we will travel this path with the laser beam.
+ *            Normal value is 1.0 and is a compromise between scan speed and scan accuracy at a reasonable projection
+ *            angle. A value of 2 will tell MadMapper to scan twice faster when rendering this shape.
  *          - SKIPBLCK: Boolean value to tell MadMapper it should or not skip scanning "long" black sections of the path
  *          - PRESRVOR: Boolean value to tell MadMapper it should not looks for the best rendering order for the pathes
  *            transmitted by this media, but those pathes should be rendered in the order they are received.
@@ -118,7 +121,7 @@
  *            on the path length (except for single beam)
  *          - SOFTCLOS: Integer - number of ILDA points we should use for "edge blend" start & end of a closed shape
  *          - SNGLPTIN: Integer - number of ILDA points we should use for this shape if it's a single beam (a single position or
- *            at least all points are at the same position)
+ *            at least all points are at the same position) - 0 for automatic
  *
  *      - ... Other software to be added
 */
@@ -142,10 +145,9 @@
     #define ATTRIBUTE_PACKED ;
 #else
     // gcc
-    #ifdef ATTRIBUTE_PACKED
-        #undef ATTRIBUTE_PACKED
+    #ifndef ATTRIBUTE_PACKED
+        #define ATTRIBUTE_PACKED __attribute__( ( packed ) )
     #endif
-    #define ATTRIBUTE_PACKED __attribute__( ( packed ) )
 #endif
 
 struct GeomUdpHeader {
@@ -182,5 +184,3 @@ struct GeomUdpPacketData {
 #if defined(_MSC_VER)
     #pragma pack( pop, before_definition )
 #endif
-
-#undef ATTRIBUTE_PACKED
