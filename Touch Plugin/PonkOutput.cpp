@@ -188,37 +188,17 @@ void PonkOutput::pushPoint_XYRGB_U16(std::vector<unsigned char>& fullData, const
     }
 }
 
-bool PonkOutput::validatePrimitiveDat(const OP_DATInput* primitive, int numPrimitives) {
-	// Check that the dat is table
-	if (!primitive->isTable) {
-		return false;
-	}
-
-	// Check that that the number of row match the number of primitive + title
-	if (primitive->numRows != (numPrimitives + 1)) {
-		return false;
-	}
-
-	// Check that the title of the third column is close
-	if (strcmp(primitive->getCell(0, 2), "close") != 0)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-
-std::map<std::string, float> PonkOutput::getMetadata(const OP_DATInput* primitive, int primitiveIndex) {
+std::map<std::string, float> PonkOutput::getMetadata(const OP_SOPInput* sinput) {
 	std::map<std::string, float> metadata;
 	
 	// check how many metadata attribute the primitive dat contains
-	int numMetadata = primitive->numCols - 4;
+	int numMetadata = sinput->getNumCustomAttributes();
 
 	// get the metadata from the dat
 	for (int i = 0; i < numMetadata; i++) {
-		std::string metadataName = primitive->getCell(0, 3 + i);
-		float metadataValue = (float)std::strtod(primitive->getCell(primitiveIndex + 1, 3 + i), NULL);
+		const SOP_CustomAttribData* customAttribData = sinput->getCustomAttribute(i);
+		std::string metadataName = customAttribData->name;
+		float metadataValue = (float)customAttribData->floatData[0];
 		metadata[metadataName] = metadataValue;
 	}
 
@@ -286,12 +266,9 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		return;
 	}
 
-	// Get the primitive dat from the attribute
-	const OP_DATInput* primitive = inputs->getParDAT("Primitive"); 
 
-	// Only run if a SOP is connected on the first input and a
-	// is set on the primitive parameter
-	if (inputs->getNumInputs() > 0 && primitive)
+	// Only run if a SOP is connected on the first input
+	if (inputs->getNumInputs() > 0)
 	{
 		// Get the input sop
 		const OP_SOPInput	*sinput = inputs->getInputSOP(0);
@@ -303,69 +280,62 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		std::vector<unsigned char> fullData;
 		fullData.reserve(65536);
 
-		// Check that the primitive dat is valid
-		if(validatePrimitiveDat(primitive, sinput->getNumPrimitives()))
-		{
-			const Position* ptArr = sinput->getPointPositions();
-			const Color* colors = nullptr;
+		const Position* ptArr = sinput->getPointPositions();
+		const Color* colors = nullptr;
 
-			if (sinput->hasColors()) {
-				colors = sinput->getColors()->colors;
+		if (sinput->hasColors()) {
+			colors = sinput->getColors()->colors;
+		}
+
+		for (int primitiveNumber = 0; primitiveNumber < sinput->getNumPrimitives(); primitiveNumber++)
+		{
+			//std::cout << "-------------------- primitive : " << i << std::endl;
+
+            // Write Format Data
+            fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8);
+
+			// get the metadata
+			std::map<std::string, float> metadata = getMetadata(sinput);
+
+			// Write meta data count
+			fullData.push_back(metadata.size());
+
+			for (const auto& kv : metadata) {
+				char charMetadata[9];
+				std::copy(kv.first.begin(), kv.first.end(), charMetadata);
+
+				pushMetaData(fullData, charMetadata, kv.second);
 			}
 
-			for (int primitiveNumber = 0; primitiveNumber < sinput->getNumPrimitives(); primitiveNumber++)
-			{
-				//std::cout << "-------------------- primitive : " << i << std::endl;
+			const SOP_PrimitiveInfo primInfo = sinput->getPrimitive(primitiveNumber);
 
-                // Write Format Data
-                fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8);
+			const int32_t* primVert = primInfo.pointIndices;
 
-				// get the metadata
-				std::map<std::string, float> metadata = getMetadata(primitive, primitiveNumber);
+			int numPoints = primInfo.numVertices;
 
-				// Write meta data count
-				fullData.push_back(metadata.size());
+			// check if the primitve is closed
+			if (primInfo.isClosed) {
+                // Write point count
+                push16bits(fullData, numPoints+1);
+            } else {
+                push16bits(fullData, numPoints);
+            }
 
-				for (const auto& kv : metadata) {
-					char charMetadata[9];
-					std::copy(kv.first.begin(), kv.first.end(), charMetadata);
-
-					pushMetaData(fullData, charMetadata, kv.second);
-				}
-
-				const SOP_PrimitiveInfo primInfo = sinput->getPrimitive(primitiveNumber);
-
-				const int32_t* primVert = primInfo.pointIndices;
-
-				int numPoints = primInfo.numVertices;
-
-				// check if the primitve is closed
-				if (primInfo.isClosed) {
-                    // Write point count
-                    push16bits(fullData, numPoints+1);
-                } else {
-                    push16bits(fullData, numPoints);
-                }
-
-                static const Color s_white(1.0f, 1.0f, 1.0f, 1.0f);
+            static const Color s_white(1.0f, 1.0f, 1.0f, 1.0f);
                 
-				for (int pointNumber = 0; pointNumber < numPoints; pointNumber++) {
-					Position pointPosition = cameraTransProj * ptArr[primVert[pointNumber]];
-					pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[pointNumber]]:s_white);
-				}
+			for (int pointNumber = 0; pointNumber < numPoints; pointNumber++) {
+				Position pointPosition = cameraTransProj * ptArr[primVert[pointNumber]];
+				pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[pointNumber]]:s_white);
+			}
 
-				// If the primitive is close add the first point at the end
-				if (primInfo.isClosed) {
-					Position pointPosition = cameraTransProj * ptArr[primVert[0]];
-                    pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[0]]:s_white);
+			// If the primitive is close add the first point at the end
+			if (primInfo.isClosed) {
+				Position pointPosition = cameraTransProj * ptArr[primVert[0]];
+                pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[0]]:s_white);
 
-				}
 			}
 		}
-		else
-		{
-			//std::cout << "Invalid Primitive Dat" << std::endl;
-		}
+
 
 		// Check if we don't reach the maximum number of chunck
         size_t chunksCount64 = 1 + fullData.size() / (PONK_MAX_CHUNK_SIZE-sizeof(GeomUdpHeader));
@@ -616,18 +586,6 @@ PonkOutput::setupParameters(OP_ParameterManager* manager, void* reserved)
 		OP_ParAppendResult res = manager->appendInt(np, 1);
         assert(res == OP_ParAppendResult::Success);
 	}
-
-	// Primitive data
-	{
-		OP_StringParameter sopp;
-
-		sopp.name = "Primitive";
-		sopp.label = "Primitive";
-
-		OP_ParAppendResult res = manager->appendDAT(sopp);
-		assert(res == OP_ParAppendResult::Success);
-	}
-
 
 	// Camera
 
