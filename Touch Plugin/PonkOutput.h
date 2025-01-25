@@ -11,6 +11,8 @@
 #include <string>
 #include "matrix.h"
 
+using namespace TD;
+
 
 // To get more help about these functions, look at SOP_CPlusPlusBase.h
 class PonkOutput : public SOP_CPlusPlusBase
