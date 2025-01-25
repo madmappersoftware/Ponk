@@ -622,7 +622,7 @@ template <class T>
 inline TD::Position
 Matrix44<T>::operator * (const TD::Position &v) const
 {
-	Position tmp;
+    TD::Position tmp;
 
 	multPositionMatrix(v, tmp);
 	return tmp;
