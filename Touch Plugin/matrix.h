@@ -110,7 +110,7 @@ public:
 
 	const Matrix44 &    operator *= (const Matrix44 &v);
 	Matrix44            operator * (const Matrix44 &v) const;
-	Position			operator * (const Position &v) const;
+	TD::Position			operator * (const TD::Position &v) const;
 
 	static void         multiply(const Matrix44 &a,    // assumes that
 		const Matrix44 &b,    // &a != &c and
@@ -120,7 +120,7 @@ public:
 	// Position-times-matrix multiplication
 	//-----------------------------------
 
-	void                multPositionMatrix(const Position &src, Position &dst) const;
+	void                multPositionMatrix(const TD::Position &src, TD::Position &dst) const;
 
 	//------------------------------------------------------------
 	// Inverse matrix: If singExc is false, inverting a singular
@@ -619,8 +619,8 @@ Matrix44<T>::operator *= (const Matrix44<T> &v)
 }
 
 template <class T>
-inline Position
-Matrix44<T>::operator * (const Position &v) const
+inline TD::Position
+Matrix44<T>::operator * (const TD::Position &v) const
 {
 	Position tmp;
 
@@ -693,7 +693,7 @@ Matrix44<T>::multiply(const Matrix44<T> &a,
 
 template <class T>
 void
-Matrix44<T>::multPositionMatrix(const Position &src, Position &dst) const
+Matrix44<T>::multPositionMatrix(const TD::Position &src, TD::Position &dst) const
 {
 	T a, b, c, w;
 

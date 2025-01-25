@@ -340,10 +340,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 				int numPoints = primInfo.numVertices;
 
 				// check if the primitve is closed
-				bool isClosed = false;
-				if (strcmp(primitive->getCell(primitiveNumber+1, 2), "1") == 0) {
-					isClosed = true;
-
+				if (primInfo.isClosed) {
                     // Write point count
                     push16bits(fullData, numPoints+1);
                 } else {
@@ -358,7 +355,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 				}
 
 				// If the primitive is close add the first point at the end
-				if (isClosed) {
+				if (primInfo.isClosed) {
 					Position pointPosition = cameraTransProj * ptArr[primVert[0]];
                     pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[0]]:s_white);
 
