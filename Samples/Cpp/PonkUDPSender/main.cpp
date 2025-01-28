@@ -127,14 +127,14 @@ int main()
             pushMetaData(fullData,"MAXSPEED",1.0f);
 
             // Write point count - LSB first
-            #define CIRCLE_POINT_COUNT 1024
+            #define CIRCLE_POINT_COUNT 4096
             #define CIRCLE_MOVE_SIZE 0.2f
             #define CIRCLE_SIZE 0.5f
             push16bits(fullData,CIRCLE_POINT_COUNT);
-            // Write 1024 points
+            // Write CIRCLE_POINT_COUNT points
             const auto circleCenterX = CIRCLE_MOVE_SIZE * cos(animTime*3);
             const auto circleCenterY = CIRCLE_MOVE_SIZE * sin(animTime*3);
-            for (int i=0; i<1024; i++) {
+            for (int i=0; i<CIRCLE_POINT_COUNT; i++) {
                 // Be sure to close circle
                 const auto normalizedPosInCircle = double(i)/(CIRCLE_POINT_COUNT-1);
                 const auto x = static_cast<float>(circleCenterX + CIRCLE_SIZE * cos(normalizedPosInCircle*2*M_PI));
@@ -226,7 +226,7 @@ int main()
             GenericAddr destAddr;
             destAddr.family = AF_INET;
             // Unicast on localhost 127.0.0.1
-            destAddr.ip = ((127 << 24) + (0 << 16) + (0 << 8) + 1);
+            destAddr.ip = PONK_MULTICAST_IP;
             destAddr.port = PONK_PORT;
             socket.sendTo(destAddr, &packet.front(), static_cast<unsigned int>(packet.size()));
 

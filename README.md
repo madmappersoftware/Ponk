@@ -17,6 +17,13 @@ PONK (**P**athes **O**ver **N**etwor**K**) is a minimal protocol to transfer 2D 
   - The sender should be able to attach "meta data" to each path transmitted, that the receiver might handle for specific behaviors. When rasterizing a path for laser rendering user might give some hints like "should we favor scan speed or render precision ?"
   - Receiver must be able to detect network issue and ignore a frame if something when wrong (CRC)
 
+## Transport
+ - Data is transmitted over UDP multicast or unicast. By default multicast is preferred because it allows multiple  softwares running on same computer to receive the packets. With unicast, first socket bound on the port will eat the packets and software started after will not receive any data.
+ But since some network switches don't handle multicast well, and unicast performances are better, there should be an option to switch to unicast.
+ So the expected behavior on both side is:
+   - Sender should be in multicast by default, with an option to switch to unicast and enter the target IP
+   - Receiver should subscribe to multicast address (setsockopt / IP_ADD_MEMBERSHIP), it will then receive packets coming through multicast or through unicast
+
 ## Implementation in Sender
 - A software can instanciate multiple senders (different streams)
 - A sender is identified by a 32 bits number which can be a random generated value when instanciating the sending component
@@ -43,10 +50,9 @@ PONK (**P**athes **O**ver **N**etwor**K**) is a minimal protocol to transfer 2D 
 - Synchronization
   - If the receiver notify sender that it has used the last received frame, the sender could adjust to the receiver framerate... (since the sender doesn't know how long it will take to the laser to travel the path, but receiver might know)
 - New Data Formats:
-  - XY_U16_SingleRGB: if you send a path of 2000 points with the same color, we could reduce bandwidth a lot by removing color
+  - XY_U16_SingleRGB: if you send a path of 2000 points with the same color, we could reduce bandwidth a lot by removing color for each point
   - XYRGBU1U2U3: would be useful to control additional diodes (ie yellow, deep blue...)
   - XYZRGB: providing the Z would let the user handle the 3D->2D projection with a controllable camera in the receiver
-- Laser Rasterization Settings:
 
 ## Packet Format:
 - Header:
@@ -74,6 +80,7 @@ PONK (**P**athes **O**ver **N**etwor**K**) is a minimal protocol to transfer 2D 
 - MadMapper / MadLaser: most of those parameters can be adjusted at surface level. Adding meta data will override settings set at surface level for the path it is attached to. Those parameters are documented in MadLaser documentation
   - PATHNUMB: Integer number for identifying the shape (ie if the first shape for previous frame disappeared, MadMapper can anyway know this shape corresponds to a shape in previous frame using this identifier, it might be used for instance in dispatching algorithms)
   - MAXSPEED: Floating point number defining the maximum laser scan speed for this shape. Normal value is 1.0 and is a compromise between scan speed and scan accuracy at a reasonable projection angle. A value of 2 will tell MadMapper it can scan twice faster when rendering this shape.
+  - FIXSPEED: Floating point number defining the speed at which we will travel this path with the laser beam. Normal value is 1.0 and is a compromise between scan speed and scan accuracy at a reasonable projection angle. A value of 2 will tell MadMapper to scan twice faster when rendering this shape.
   - SKIPBLCK: Boolean value to tell MadMapper it should or not skip scanning "long" black sections of the path
   - PRESRVOR: Boolean value to tell MadMapper it should not looks for the best rendering order for the pathes transmitted by this media, but those pathes should be rendered in the order they are received.
   - ANGLEOPT: Boolean value to tell MadMapper we want angle optimization or not
@@ -85,6 +92,6 @@ PONK (**P**athes **O**ver **N**etwor**K**) is a minimal protocol to transfer 2D 
   - POLYFADO: Floating point value - how much we should decrease luminosity when ending scanning a path (0.0-0.1)
   - MINIPNTS: Integer - minimum number of ILDA points that should be generated to render this path (allows to make a small path very lightened and a long path less, normally luminosity (= scanning time) is dispatched depending on the path length (except for single beam)
   - SOFTCLOS: Integer - number of ILDA points we should use for "edge blend" start & end of a closed shape
-  - SNGLPTIN: Integer - number of ILDA points we should use for this shape if it's a single beam (a single position or at least all points are at the same position)
+  - SNGLPTIN: Integer - number of ILDA points we should use for this shape if it's a single beam (a single position or at least all points are at the same position) - 0 for automatic
 
 - ... Other software to be added

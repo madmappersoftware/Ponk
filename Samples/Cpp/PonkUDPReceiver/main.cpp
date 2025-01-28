@@ -11,6 +11,7 @@ int main()
     std::cout << "Starting" << std::endl;
 
     DatagramSocket socket(INADDR_ANY,PONK_PORT);
+    socket.joinMulticastGroup(PONK_MULTICAST_IP,INADDR_ANY);
 
     // TODO: let user choose a network interface or join for all active networkinterfaces
     // Zero means first active network adapter if I'm not wrong

@@ -21,6 +21,18 @@
  *        user might give some hints like "should we favor scan speed or render precision ?"
  *      - Receiver must be able to detect network issue and ignore a frame if something when wrong (CRC)
  *
+ *  Transport
+ *      - Data is transmitted over UDP multicast or unicast. By default multicast is preferred because it allows
+ *        multiple  softwares running on same computer to receive the packets. With unicast, first socket bound
+ *        on the port will eat the packets and software started after will not receive any data.
+ *        But since some network switches don't handle multicast well, and unicast performances are better,
+ *        there should be an option to switch to unicast.
+ *        So the expected behavior on both side is:
+ *
+ *          - Sender should be in multicast by default, with an option to switch to unicast and enter the target IP
+ *          - Receiver should subscribe to multicast address (setsockopt / IP_ADD_MEMBERSHIP), it will then receive
+ *            packets coming through multicast or through unicast
+ *
  *  Implementation in Sender
  *      - A software can send instanciate multiple senders.
  *      - A sender is identified by a 32 bits number which can be a  random generated value when instanciating
@@ -134,8 +146,10 @@
 #define PONK_DATA_FORMAT_XYRGB_U16 0
 #define PONK_DATA_FORMAT_XY_F32_RGB_U8 1
 // Maximum chunk size
-#define PONK_MAX_CHUNK_SIZE 8192
-// Geom UDP port = 5583
+#define PONK_MAX_CHUNK_SIZE 1472
+// Ponk Multicast address
+#define PONK_MULTICAST_IP ((239<<24) + (255<<16) + (10<<8) + (24<<0))
+// Ponk port = 5583
 #define PONK_PORT 5583
 
 #ifdef _MSC_VER
