@@ -256,6 +256,8 @@ PonkOutput::buildCameraTransProjMatrix(const OP_Inputs* inputs)
 void
 PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 {
+	m_errorMessage.clear();
+
 	// disable the netaddress parameter if multicast is enabled
 	if (inputs->getParInt("Multicast")) {
 		inputs->enablePar("Netaddress", false);
@@ -264,6 +266,21 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 	}
 	
 	if (!inputs->getParInt("Active")) {
+		return;
+	}
+
+	// Get the sender name (ensure we don't overflow the buffer)
+	char senderName[32];
+	const char* raw = inputs->getParString("Sendername");
+	if (raw) {
+		strncpy(senderName, raw, 31);
+		senderName[31] = '\0';
+	} else {
+		senderName[0] = '\0';
+	}
+
+	if (senderName[0] == '\0') {
+		m_errorMessage = "Sendername parameter is empty. Please enter a sender name.";
 		return;
 	}
 
@@ -392,7 +409,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 			strncpy(header.headerString, PONK_HEADER_STRING, sizeof(header.headerString));
 			header.protocolVersion = 0;
 			header.senderIdentifier = uid; // Unique ID (so when changing name in sender, the receiver can just rename existing stream)
-			strncpy(header.senderName, "Touch Designer", sizeof(header.senderName));
+			strncpy(header.senderName, senderName, sizeof(header.senderName));
 			header.frameNumber = frameNumber;
 			header.chunkCount = chunksCount;
 			header.chunkNumber = chunkNumber;
@@ -531,6 +548,16 @@ PonkOutput::setupParameters(OP_ParameterManager* manager, void* reserved)
         assert(res == OP_ParAppendResult::Success);
 	}
 
+	// Sender Name
+	{
+		OP_StringParameter sp;
+		sp.name = "Sendername";
+		sp.label = "Sender Name";
+		sp.defaultValue = "Touch Designer";
+		OP_ParAppendResult res = manager->appendString(sp);
+		assert(res == OP_ParAppendResult::Success);
+	}
+
 	// Camera
 
 	// Camera Object
@@ -597,5 +624,11 @@ PonkOutput::setupParameters(OP_ParameterManager* manager, void* reserved)
 void
 PonkOutput::pulsePressed(const char* name, void* reserved)
 {
+}
+
+void
+PonkOutput::getErrorString(OP_String* error, void* reserved)
+{
+	error->setString(m_errorMessage.c_str());
 }
 

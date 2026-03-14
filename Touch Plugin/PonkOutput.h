@@ -59,6 +59,8 @@ public:
 	virtual void setupParameters(OP_ParameterManager* manager, void* reserved) override;
 	virtual void pulsePressed(const char* name, void* reserved) override;
 
+	virtual void getErrorString(OP_String* error, void* reserved) override;
+
 private:
 	void push16bits(std::vector<unsigned char>& fullData, unsigned short value);
     void push32bits(std::vector<unsigned char>& fullData, int value);
@@ -78,4 +80,7 @@ private:
 
 	/// PONK frame counter; wraps at 256 (protocol uses 8-bit field).
 	unsigned char frameNumber = 0;
+
+	/// Current error message; when non-empty, the node is in error state.
+	std::string m_errorMessage;
 };
