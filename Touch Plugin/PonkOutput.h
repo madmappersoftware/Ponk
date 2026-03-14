@@ -93,6 +93,7 @@ private:
 	DatagramSocket* socket;
 
 	std::vector<unsigned char> fullData;
+	std::vector<unsigned char> packet;
 
 
 	double animTime = 0;

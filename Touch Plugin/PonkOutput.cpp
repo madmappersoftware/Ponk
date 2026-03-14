@@ -407,7 +407,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
             header.dataCrc = dataCrc;
 
 			// Prepare buffer
-			std::vector<unsigned char> packet;
+			packet.clear();
             size_t dataBytesForThisChunk = std::min<size_t>(fullData.size() - written, PONK_MAX_CHUNK_SIZE-sizeof(GeomUdpHeader));
 			packet.resize(sizeof(GeomUdpHeader) + dataBytesForThisChunk);
 			// Write header
