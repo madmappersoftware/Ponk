@@ -454,7 +454,7 @@ PonkOutput::getNumInfoCHOPChans(void* reserved)
 {
 	// We return the number of channel we want to output to any Info CHOP
 	// connected to the CHOP. In this example we are just going to send 4 channels.
-	return 4;
+	return 0;
 }
 
 void
@@ -467,12 +467,12 @@ PonkOutput::getInfoCHOPChan(int32_t index,
 bool
 PonkOutput::getInfoDATSize(OP_InfoDATSize* infoSize, void* reserved)
 {
-	infoSize->rows = 3;
-	infoSize->cols = 2;
+	infoSize->rows = 0;
+	infoSize->cols = 0;
 	// Setting this to false means we'll be assigning values to the table
 	// one row at a time. True means we'll do it one column at a time.
 	infoSize->byColumn = false;
-	return true;
+	return false;
 }
 
 void
@@ -481,7 +481,6 @@ PonkOutput::getInfoDATEntries(int32_t index,
 								OP_InfoDATEntries* entries,
 								void* reserved)
 {
-	char tempBuffer[4096];
 }
 
 
