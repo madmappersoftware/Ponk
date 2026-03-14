@@ -92,6 +92,9 @@ private:
 
 	DatagramSocket* socket;
 
+	std::vector<unsigned char> fullData;
+
+
 	double animTime = 0;
 	/// PONK frame counter; wraps at 256 (protocol uses 8-bit field).
 	unsigned char frameNumber = 0;

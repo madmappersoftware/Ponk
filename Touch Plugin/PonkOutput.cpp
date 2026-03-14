@@ -291,8 +291,8 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		// build the matrix to do the world space to screen projection
 		Matrix44<double> cameraTransProj = buildCameraTransProjMatrix(inputs);
 
-		// Create the vector  will store our the data that need to be send to madLaser
-		std::vector<unsigned char> fullData;
+		// Clear the full data vector and reserve the maximum size
+		fullData.clear();
 		fullData.reserve(65536);
 
 		const Position* ptArr = sinput->getPointPositions();
