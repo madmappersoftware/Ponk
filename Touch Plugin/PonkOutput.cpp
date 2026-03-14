@@ -258,7 +258,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 {
 	m_errorMessage.clear();
 
-	// disable the netaddress parameter if multicast is enabled
+	// Disable the netaddress parameter if multicast is enabled
 	if (inputs->getParInt("Multicast")) {
 		inputs->enablePar("Netaddress", false);
 	} else {
@@ -279,6 +279,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		senderName[0] = '\0';
 	}
 
+	// Check if the sender name is empty
 	if (senderName[0] == '\0') {
 		m_errorMessage = "Sendername parameter is empty. Please enter a sender name.";
 		return;
@@ -537,12 +538,20 @@ PonkOutput::setupParameters(OP_ParameterManager* manager, void* reserved)
         assert(res == OP_ParAppendResult::Success);
 	}
 
-	// Unique ID
+	// Unique ID (matches GeomUdpHeader.senderIdentifier: 32-bit; max 2147483647 because getParInt is int32_t)
 	{
 		OP_NumericParameter	np;
 
 		np.name = "Uid";
 		np.label = "Unique ID";
+		np.minValues[0] = 0;
+		np.maxValues[0] = 1024;
+		np.defaultValues[0] = 0;
+		np.minSliders[0] = 0;
+		np.maxSliders[0] = 1024;
+
+		np.clampMins[0] = true;
+		np.clampMaxes[0] = true;
 
 		OP_ParAppendResult res = manager->appendInt(np, 1);
         assert(res == OP_ParAppendResult::Success);
