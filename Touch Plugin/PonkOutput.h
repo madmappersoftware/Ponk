@@ -71,32 +71,11 @@ private:
 
 	Matrix44<double> buildCameraTransProjMatrix(const OP_Inputs* inputs);
 
-	// We don't need to store this pointer, but we do for the example.
-	// The OP_NodeInfo class store information about the node that's using
-	// this instance of the class (like its name).
-	const OP_NodeInfo*		myNodeInfo;
-
-	// In this example this value will be incremented each time the execute()
-	// function is called, then passes back to the SOP
-	int32_t					myExecuteCount;
-
-
-	double					myOffset;
-	std::string             myChopChanName;
-	float                   myChopChanVal;
-	std::string             myChop;
-
-	std::string             myDat;
-
-	int						myNumVBOTexLayers;
-
 	DatagramSocket* socket;
 
 	std::vector<unsigned char> fullData;
 	std::vector<unsigned char> packet;
 
-
-	double animTime = 0;
 	/// PONK frame counter; wraps at 256 (protocol uses 8-bit field).
 	unsigned char frameNumber = 0;
 };

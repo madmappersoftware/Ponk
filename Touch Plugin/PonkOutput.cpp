@@ -71,17 +71,8 @@ extern "C"
 };
 
 
-PonkOutput::PonkOutput(const OP_NodeInfo* info) : myNodeInfo(info)
+PonkOutput::PonkOutput(const OP_NodeInfo* info)
 {
-	myExecuteCount = 0;
-	myOffset = 0.0;
-	myChop = "";
-
-	myChopChanName = "";
-	myChopChanVal = 0;
-
-	myDat = "N/A";
-
 	socket = new DatagramSocket(INADDR_ANY, 0);
 }
 
@@ -265,7 +256,6 @@ PonkOutput::buildCameraTransProjMatrix(const OP_Inputs* inputs)
 void
 PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 {
-	myExecuteCount++;
 	// disable the netaddress parameter if multicast is enabled
 	if (inputs->getParInt("Multicast")) {
 		inputs->enablePar("Netaddress", false);
@@ -305,6 +295,8 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		// get the metadata
 		std::map<std::string, float*> metadata = getMetadata(sinput);
 
+		static const Color s_white(1.0f, 1.0f, 1.0f, 1.0f);
+
 		for (int primitiveNumber = 0; primitiveNumber < sinput->getNumPrimitives(); primitiveNumber++)
 		{
 			//std::cout << "-------------------- primitive : " << i << std::endl;
@@ -338,7 +330,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
                 push16bits(fullData, numPoints);
             }
 
-            static const Color s_white(1.0f, 1.0f, 1.0f, 1.0f);
+            
                 
 			for (int pointNumber = 0; pointNumber < numPoints; pointNumber++) {
 				Position pointPosition = cameraTransProj * ptArr[primVert[pointNumber]];
@@ -451,32 +443,7 @@ void
 PonkOutput::getInfoCHOPChan(int32_t index,
 								OP_InfoCHOPChan* chan, void* reserved)
 {
-	// This function will be called once for each channel we said we'd want to return
-	// In this example it'll only be called once.
 
-	if (index == 0)
-	{
-		chan->name->setString("executeCount");
-		chan->value = (float)myExecuteCount;
-	}
-
-	if (index == 1)
-	{
-		chan->name->setString("offset");
-		chan->value = (float)myOffset;
-	}
-
-	if (index == 2)
-	{
-		chan->name->setString(myChop.c_str());
-		chan->value = (float)myOffset;
-	}
-
-	if (index == 3)
-	{
-		chan->name->setString(myChopChanName.c_str());
-		chan->value = myChopChanVal;
-	}
 }
 
 bool
@@ -497,63 +464,6 @@ PonkOutput::getInfoDATEntries(int32_t index,
 								void* reserved)
 {
 	char tempBuffer[4096];
-
-	if (index == 0)
-	{
-		// Set the value for the first column
-#ifdef _WIN32
-		strcpy_s(tempBuffer, "executeCount");
-#else // macOS
-		strlcpy(tempBuffer, "executeCount", sizeof(tempBuffer));
-#endif
-		entries->values[0]->setString(tempBuffer);
-
-		// Set the value for the second column
-#ifdef _WIN32
-		sprintf_s(tempBuffer, "%d", myExecuteCount);
-#else // macOS
-		snprintf(tempBuffer, sizeof(tempBuffer), "%d", myExecuteCount);
-#endif
-		entries->values[1]->setString(tempBuffer);
-	}
-
-	if (index == 1)
-	{
-		// Set the value for the first column
-#ifdef _WIN32
-		strcpy_s(tempBuffer, "offset");
-#else // macOS
-		strlcpy(tempBuffer, "offset", sizeof(tempBuffer));
-#endif
-		entries->values[0]->setString(tempBuffer);
-
-		// Set the value for the second column
-#ifdef _WIN32
-		sprintf_s(tempBuffer, "%g", myOffset);
-#else // macOS
-		snprintf(tempBuffer, sizeof(tempBuffer), "%g", myOffset);
-#endif
-		entries->values[1]->setString(tempBuffer);
-	}
-
-	if (index == 2)
-	{
-		// Set the value for the first column
-#ifdef _WIN32
-		strcpy_s(tempBuffer, "DAT input name");
-#else // macOS
-		strlcpy(tempBuffer, "DAT input name", sizeof(tempBuffer));
-#endif
-		entries->values[0]->setString(tempBuffer);
-
-		// Set the value for the second column
-#ifdef _WIN32
-		strcpy_s(tempBuffer, myDat.c_str());
-#else // macOS
-		strlcpy(tempBuffer, myDat.c_str(), sizeof(tempBuffer));
-#endif
-		entries->values[1]->setString(tempBuffer);
-	}
 }
 
 
@@ -687,9 +597,5 @@ PonkOutput::setupParameters(OP_ParameterManager* manager, void* reserved)
 void
 PonkOutput::pulsePressed(const char* name, void* reserved)
 {
-	if (!strcmp(name, "Reset"))
-	{
-		myOffset = 0.0;
-	}
 }
 
