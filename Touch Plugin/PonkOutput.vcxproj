@@ -96,7 +96,6 @@
     <ClInclude Include="..\Common\Cpp\PonkDefs.h" />
     <ClInclude Include="PonkOutput.h" />
     <ClInclude Include="CPlusPlus_Common.h" />
-    <ClInclude Include="GL_Extensions.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="SOP_CPlusPlusBase.h" />
   </ItemGroup>

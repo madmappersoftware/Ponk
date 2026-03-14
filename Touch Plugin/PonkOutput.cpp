@@ -1,5 +1,6 @@
 #include "PonkOutput.h"
 
+#include <algorithm>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -21,8 +22,9 @@ extern "C"
 	void
 	FillSOPPluginInfo(SOP_PluginInfo *info)
 	{
-		// Always return SOP_CPLUSPLUS_API_VERSION in this function.
-		info->apiVersion = SOPCPlusPlusAPIVersion;
+		// Check to make sure the running TD version supports our API version.
+		if (!info->setAPIVersion(SOPCPlusPlusAPIVersion))
+			return;
 
 		// The opType is the unique name for this TOP. It must start with a 
 		// capital A-Z character, and all the following characters must lower case
@@ -33,7 +35,7 @@ extern "C"
 		info->customOPInfo.opLabel->setString("Ponk Output");
 
 		// Will be turned into a 3 letter icon on the nodes
-		info->customOPInfo.opIcon->setString("PNK");
+		info->customOPInfo.opIcon->setString("PKO");
 
 		// Information about the author of this OP
 		info->customOPInfo.authorName->setString("Tyrell");
@@ -43,6 +45,8 @@ extern "C"
 		info->customOPInfo.minInputs = 1;
 		info->customOPInfo.maxInputs = 1;
 
+		// Custom website URL that the Operator Help can point to
+		info->customOPInfo.opHelpURL->setString("yourwebsiteurl.com");
 	}
 
 	DLLEXPORT
@@ -78,7 +82,7 @@ PonkOutput::PonkOutput(const OP_NodeInfo* info) : myNodeInfo(info)
 
 	myDat = "N/A";
 
-	socket = new DatagramSocket (INADDR_ANY, 0);;
+	socket = new DatagramSocket(INADDR_ANY, 0);
 }
 
 PonkOutput::~PonkOutput()
@@ -112,8 +116,7 @@ void PonkOutput::push32bits(std::vector<unsigned char>& fullData, int value) {
 }
 
 void PonkOutput::pushFloat32(std::vector<unsigned char>& fullData, float value) {
-    const auto asInt = *reinterpret_cast<int*>(&value);
-    push32bits(fullData,asInt);
+    push32bits(fullData,*reinterpret_cast<int*>(&value));
 }
 
 void PonkOutput::pushMetaData(std::vector<unsigned char>& fullData, const char(&eightCC)[9], int value) {
@@ -129,77 +132,79 @@ void PonkOutput::pushMetaData(std::vector<unsigned char>& fullData, const char(&
 	push32bits(fullData, *(int*)&value);
 }
 
+#define CLAMP_IN_ZERO_ONE(x) ((x) < 0 ? 0 : ((x) > 1 ? 1 : (x)))
+
 void PonkOutput::pushPoint_XY_F32_RGB_U8(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor) {
     pushFloat32(fullData, pointPosition.x);
     pushFloat32(fullData, pointPosition.y);
-	#define CLAMP_IN_ZERO_ONE(x) (x<0?0:(x>1?1:x))
-    fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.r)*255));
-    fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.g)*255));
-    fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.b)*255));
+    fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.r) * 255));
+    fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.g) * 255));
+    fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.b) * 255));
 }
 
-void PonkOutput::pushPoint_XYRGB_U16(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor) {
-    if (pointPosition.x < -1 || pointPosition.x > 1 || pointPosition.y < -1 || pointPosition.y > 1) {
-        // Clamp position and set color = 0
-        unsigned short x16Bits, y16Bits;
-        if (pointPosition.x < -1) {
-            x16Bits = 0;
-        } else if (pointPosition.x > 1) {
-            x16Bits = 65535;
-        } else {
-            x16Bits = static_cast<unsigned short>(((pointPosition.x + 1) / 2) * 65535);
-        }
-        if (pointPosition.y < -1) {
-            y16Bits = 0;
-        } else if (pointPosition.y > 1) {
-            y16Bits = 65535;
-        } else {
-            y16Bits = static_cast<unsigned short>(((pointPosition.y + 1) / 2) * 65535);
-        }
+// void PonkOutput::pushPoint_XYRGB_U16(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor) {
+//     if (pointPosition.x < -1 || pointPosition.x > 1 || pointPosition.y < -1 || pointPosition.y > 1) {
+//         // Clamp position and set color = 0
+//         unsigned short x16Bits, y16Bits;
+//         if (pointPosition.x < -1) {
+//             x16Bits = 0;
+//         } else if (pointPosition.x > 1) {
+//             x16Bits = 65535;
+//         } else {
+//             x16Bits = static_cast<unsigned short>(((pointPosition.x + 1) / 2) * 65535);
+//         }
+//         if (pointPosition.y < -1) {
+//             y16Bits = 0;
+//         } else if (pointPosition.y > 1) {
+//             y16Bits = 65535;
+//         } else {
+//             y16Bits = static_cast<unsigned short>(((pointPosition.y + 1) / 2) * 65535);
+//         }
 
-        // Push X - LSB first
-        push16bits(fullData, x16Bits);
-        // Push Y - LSB first
-        push16bits(fullData, y16Bits);
-        // Push R - LSB first
-        push16bits(fullData, 0);
-        // Push G - LSB first
-        push16bits(fullData, 0);
-        // Push B - LSB first
-        push16bits(fullData, 0);
-    } else {
-        const auto x16Bits = static_cast<unsigned short>(((pointPosition.x + 1) / 2) * 65535);
-        const auto y16Bits = static_cast<unsigned short>(((pointPosition.y + 1) / 2) * 65535);
+//         // Push X - LSB first
+//         push16bits(fullData, x16Bits);
+//         // Push Y - LSB first
+//         push16bits(fullData, y16Bits);
+//         // Push R - LSB first
+//         push16bits(fullData, 0);
+//         // Push G - LSB first
+//         push16bits(fullData, 0);
+//         // Push B - LSB first
+//         push16bits(fullData, 0);
+//     } else {
+//         const auto x16Bits = static_cast<unsigned short>(((pointPosition.x + 1) / 2) * 65535);
+//         const auto y16Bits = static_cast<unsigned short>(((pointPosition.y + 1) / 2) * 65535);
 
-        const auto r16Bits = static_cast<unsigned short>(((pointColor.r + 1) / 2) * 65535);
-        const auto g16Bits = static_cast<unsigned short>(((pointColor.g + 1) / 2) * 65535);
-        const auto b16Bits = static_cast<unsigned short>(((pointColor.b + 1) / 2) * 65535);
+//         const auto r16Bits = static_cast<unsigned short>(((pointColor.r + 1) / 2) * 65535);
+//         const auto g16Bits = static_cast<unsigned short>(((pointColor.g + 1) / 2) * 65535);
+//         const auto b16Bits = static_cast<unsigned short>(((pointColor.b + 1) / 2) * 65535);
 
-        // Push X - LSB first
-        push16bits(fullData, x16Bits);
-        // Push Y - LSB first
-        push16bits(fullData, y16Bits);
-        // Push R - LSB first
-        push16bits(fullData, r16Bits);
-        // Push G - LSB first
-        push16bits(fullData, g16Bits);
-        // Push B - LSB first
-        push16bits(fullData, b16Bits);
-    }
-}
+//         // Push X - LSB first
+//         push16bits(fullData, x16Bits);
+//         // Push Y - LSB first
+//         push16bits(fullData, y16Bits);
+//         // Push R - LSB first
+//         push16bits(fullData, r16Bits);
+//         // Push G - LSB first
+//         push16bits(fullData, g16Bits);
+//         // Push B - LSB first
+//         push16bits(fullData, b16Bits);
+//     }
+// }
 
-std::map<std::string, float> PonkOutput::getMetadata(const OP_SOPInput* sinput) {
-	std::map<std::string, float> metadata;
+std::map<std::string, float*> PonkOutput::getMetadata(const OP_SOPInput* sinput) {
+	std::map<std::string, float*> metadata;
 	
-	// check how many metadata attribute the primitive dat contains
+	// check how many metadata attribute the sop input contains	
 	int numMetadata = sinput->getNumCustomAttributes();
 
-	// get the metadata from the dat
+	// get the metadata from the sop input
 	for (int i = 0; i < numMetadata; i++) {
 		const SOP_CustomAttribData* customAttribData = sinput->getCustomAttribute(i);
+		if (!customAttribData->floatData)
+			continue;
 		std::string metadataName = customAttribData->name;
-		float metadataValue = (float)customAttribData->floatData[0];
-		metadata[metadataName] = metadataValue;
+		metadata[metadataName] = customAttribData->floatData;
 	}
 
 	return metadata;
@@ -242,8 +247,8 @@ PonkOutput::buildCameraTransProjMatrix(const OP_Inputs* inputs)
 		cameraProjection[0][3]);
 	inputs->getParDouble4("Projectionmatrixb", cameraProjection[1][0],
 		cameraProjection[1][1],
-		cameraProjection[2][2],
-		cameraProjection[3][3]);
+		cameraProjection[1][2],
+		cameraProjection[1][3]);
 	inputs->getParDouble4("Projectionmatrixc", cameraProjection[2][0],
 		cameraProjection[2][1],
 		cameraProjection[2][2],
@@ -257,21 +262,31 @@ PonkOutput::buildCameraTransProjMatrix(const OP_Inputs* inputs)
 }
 
 
-
 void
 PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 {
 	myExecuteCount++;
+	// disable the netaddress parameter if multicast is enabled
+	if (inputs->getParInt("Multicast")) {
+		inputs->enablePar("Netaddress", false);
+	} else {
+		inputs->enablePar("Netaddress", true);
+	}
+	
 	if (!inputs->getParInt("Active")) {
 		return;
 	}
-
 
 	// Only run if a SOP is connected on the first input
 	if (inputs->getNumInputs() > 0)
 	{
 		// Get the input sop
 		const OP_SOPInput	*sinput = inputs->getInputSOP(0);
+
+		// double check if the input sop is valid
+		if (!sinput) {
+			return;
+		}
 
 		// build the matrix to do the world space to screen projection
 		Matrix44<double> cameraTransProj = buildCameraTransProjMatrix(inputs);
@@ -286,6 +301,9 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		if (sinput->hasColors()) {
 			colors = sinput->getColors()->colors;
 		}
+		
+		// get the metadata
+		std::map<std::string, float*> metadata = getMetadata(sinput);
 
 		for (int primitiveNumber = 0; primitiveNumber < sinput->getNumPrimitives(); primitiveNumber++)
 		{
@@ -294,24 +312,23 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
             // Write Format Data
             fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8);
 
-			// get the metadata
-			std::map<std::string, float> metadata = getMetadata(sinput);
-
 			// Write meta data count
 			fullData.push_back(metadata.size());
-
-			for (const auto& kv : metadata) {
-				char charMetadata[9];
-				std::copy(kv.first.begin(), kv.first.end(), charMetadata);
-
-				pushMetaData(fullData, charMetadata, kv.second);
-			}
 
 			const SOP_PrimitiveInfo primInfo = sinput->getPrimitive(primitiveNumber);
 
 			const int32_t* primVert = primInfo.pointIndices;
 
 			int numPoints = primInfo.numVertices;
+
+			for (const auto& kv : metadata) {
+				char charMetadata[9];
+				memset(charMetadata, 0, sizeof(charMetadata));
+				size_t copyLen = std::min<size_t>(kv.first.size(), 8u);
+				std::copy(kv.first.begin(), kv.first.begin() + copyLen, charMetadata);
+
+				pushMetaData(fullData, charMetadata, kv.second[primVert[0]]);  
+			}
 
 			// check if the primitve is closed
 			if (primInfo.isClosed) {
@@ -340,14 +357,11 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		// Check if we don't reach the maximum number of chunck
         size_t chunksCount64 = 1 + fullData.size() / (PONK_MAX_CHUNK_SIZE-sizeof(GeomUdpHeader));
 		if (chunksCount64 > 255) {
-			throw std::runtime_error("Protocol doesn't accept sending "
-				"a packet that would be splitted "
-				"in more than 255 chunks");
+			// throw std::runtime_error("Protocol doesn't accept sending "
+			// 	"a packet that would be splitted "
+			// 	"in more than 255 chunks");
+			return;
 		}
-
-		// Get the ip address from the attribute
-		int ip[4];
-		inputs->getParInt4("Netaddress", ip[0], ip[1], ip[2], ip[3]);
 
 		// Get the Unique identifier from the attribute
 		int uid = inputs->getParInt("Uid");
@@ -362,6 +376,24 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		size_t written = 0;
 		unsigned char chunkNumber = 0;
 		unsigned char chunksCount = static_cast<unsigned char>(chunksCount64);
+		GenericAddr destAddr;
+
+		// Multicast UDP
+		if (inputs->getParInt("Multicast")) {
+			destAddr.family = AF_INET;
+			destAddr.ip = PONK_MULTICAST_IP;
+			destAddr.port = PONK_PORT;
+		}
+		// Unicast UDP
+		else {
+			// Get the ip address from the attribute
+			int ip[4];
+			inputs->getParInt4("Netaddress", ip[0], ip[1], ip[2], ip[3]);
+			destAddr.family = AF_INET;
+			destAddr.ip = ((ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3]);
+			destAddr.port = PONK_PORT;
+		}
+
 		while (written < fullData.size()) {
 			// Write packet header - 8 bytes
 			GeomUdpHeader header;
@@ -384,19 +416,11 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 			memcpy(&packet[sizeof(GeomUdpHeader)], &fullData[written], dataBytesForThisChunk);
 			written += dataBytesForThisChunk;
 
-			// Now send chunk packet
-			GenericAddr destAddr;
-			destAddr.family = AF_INET;
-
-            // Unicast UDP
-			destAddr.ip = ((ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3]);
-			destAddr.port = PONK_PORT;
+			// Send the packet
 			socket->sendTo(destAddr, &packet[0], static_cast<unsigned int>(packet.size()));
 
 			chunkNumber++;
 		}
-
-		//std::cout << "Sent frame " << std::to_string(frameNumber) << std::endl;
 
 		frameNumber++;
 	}
@@ -518,7 +542,7 @@ PonkOutput::getInfoDATEntries(int32_t index,
 #ifdef _WIN32
 		strcpy_s(tempBuffer, "DAT input name");
 #else // macOS
-		strlcpy(tempBuffer, "offset", sizeof(tempBuffer));
+		strlcpy(tempBuffer, "DAT input name", sizeof(tempBuffer));
 #endif
 		entries->values[0]->setString(tempBuffer);
 
@@ -526,7 +550,7 @@ PonkOutput::getInfoDATEntries(int32_t index,
 #ifdef _WIN32
 		strcpy_s(tempBuffer, myDat.c_str());
 #else // macOS
-		snprintf(tempBuffer, sizeof(tempBuffer), "%g", myOffset);
+		strlcpy(tempBuffer, myDat.c_str(), sizeof(tempBuffer));
 #endif
 		entries->values[1]->setString(tempBuffer);
 	}
@@ -536,13 +560,23 @@ PonkOutput::getInfoDATEntries(int32_t index,
 
 void
 PonkOutput::setupParameters(OP_ParameterManager* manager, void* reserved)
-{	// Active
-
+{	
+	// Active
 	{
 		OP_NumericParameter	np;
 
 		np.name = "Active";
 		np.label = "Active";
+
+		OP_ParAppendResult res = manager->appendToggle(np);
+        assert(res == OP_ParAppendResult::Success);
+	}
+	// Multicast
+	{
+		OP_NumericParameter	np;
+
+		np.name = "Multicast";
+		np.label = "Multicast";
 
 		OP_ParAppendResult res = manager->appendToggle(np);
         assert(res == OP_ParAppendResult::Success);

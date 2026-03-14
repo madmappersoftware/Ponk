@@ -1,3 +1,17 @@
+/* Shared Use License: This file is owned by Derivative Inc. (Derivative)
+* and can only be used, and/or modified for use, in conjunction with
+* Derivative's TouchDesigner software, and only if you are a licensee who has
+* accepted Derivative's TouchDesigner license or assignment agreement
+* (which also govern the use of this file). You may share or redistribute
+* a modified version of this file provided the following conditions are met:
+*
+* 1. The shared file or redistribution must retain the information set out
+* above and this list of conditions.
+* 2. Derivative's name (Derivative Inc.) or its trademarks may not be used
+* to endorse or promote products derived from this file without specific
+* prior written permission from Derivative.
+*/
+
 #pragma once
 
 #include "DatagramSocket/DatagramSocket.h"
@@ -51,9 +65,9 @@ private:
     void pushFloat32(std::vector<unsigned char>& fullData, float value);
 	void pushMetaData(std::vector<unsigned char>& fullData, const char(&eightCC)[9], int value);
 	void pushMetaData(std::vector<unsigned char>& fullData, const char(&eightCC)[9], float value);
-    void pushPoint_XYRGB_U16(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor);
+    //void pushPoint_XYRGB_U16(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor);
     void pushPoint_XY_F32_RGB_U8(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor);
-	std::map<std::string, float> getMetadata(const OP_SOPInput* sinput);
+	std::map<std::string, float*> getMetadata(const OP_SOPInput* sinput);
 
 	Matrix44<double> buildCameraTransProjMatrix(const OP_Inputs* inputs);
 
@@ -79,5 +93,6 @@ private:
 	DatagramSocket* socket;
 
 	double animTime = 0;
+	/// PONK frame counter; wraps at 256 (protocol uses 8-bit field).
 	unsigned char frameNumber = 0;
 };
