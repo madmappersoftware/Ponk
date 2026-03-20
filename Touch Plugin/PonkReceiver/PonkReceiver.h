@@ -37,8 +37,8 @@ class PonkReceiver : public SOP_CPlusPlusBase
 {
 public:
 
-	PonkInput(const OP_NodeInfo* info);
-	virtual ~PonkInput();
+	PonkReceiver(const OP_NodeInfo* info);
+	virtual ~PonkReceiver();
 
 	virtual void getGeneralInfo(SOP_GeneralInfo*, const OP_Inputs*, void* reserved1) override;
 	virtual void execute(SOP_Output*, const OP_Inputs*, void* reserved) override;
