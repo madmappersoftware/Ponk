@@ -1,4 +1,4 @@
-#include "PonkInput.h"
+#include "PonkReceiver.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -18,10 +18,10 @@ FillSOPPluginInfo(SOP_PluginInfo *info)
 		return;
 
 	// Unique type name: must start with upper case, rest lower case / digits
-	info->customOPInfo.opType->setString("Ponkinput");
+	info->customOPInfo.opType->setString("Ponkreceiver");
 
 	// Human-readable label shown in the OP Create Menu dialog
-	info->customOPInfo.opLabel->setString("Ponk Input");
+	info->customOPInfo.opLabel->setString("Ponk Receiver");
 
 	// Three-letter icon on the node
 	info->customOPInfo.opIcon->setString("PKI");
@@ -41,29 +41,29 @@ DLLEXPORT
 SOP_CPlusPlusBase*
 CreateSOPInstance(const OP_NodeInfo* info)
 {
-	return new PonkInput(info);
+	return new PonkReceiver(info);
 }
 
 DLLEXPORT
 void
 DestroySOPInstance(SOP_CPlusPlusBase* instance)
 {
-	delete (PonkInput*)instance;
+	delete (PonkReceiver*)instance;
 }
 
 };
 
 
-PonkInput::PonkInput(const OP_NodeInfo* info)
+PonkReceiver::PonkReceiver(const OP_NodeInfo* info)
 {
 	m_socket = new DatagramSocket(INADDR_ANY, PONK_PORT);
 	m_socket->joinMulticastGroup(PONK_MULTICAST_IP, INADDR_ANY);
 
 	m_running = true;
-	m_receiveThread = std::thread(&PonkInput::receiveThreadFunc, this);
+	m_receiveThread = std::thread(&PonkReceiver::receiveThreadFunc, this);
 }
 
-PonkInput::~PonkInput()
+PonkReceiver::~PonkReceiver()
 {
 	m_running = false;
 
@@ -79,7 +79,7 @@ PonkInput::~PonkInput()
 }
 
 void
-PonkInput::getGeneralInfo(SOP_GeneralInfo* ginfo, const OP_Inputs* inputs, void* reserved)
+PonkReceiver::getGeneralInfo(SOP_GeneralInfo* ginfo, const OP_Inputs* inputs, void* reserved)
 {
 	ginfo->cookEveryFrame = true;
 	ginfo->cookEveryFrameIfAsked = false;
@@ -93,7 +93,7 @@ PonkInput::getGeneralInfo(SOP_GeneralInfo* ginfo, const OP_Inputs* inputs, void*
 // ---------------------------------------------------------------------------
 
 void
-PonkInput::receiveThreadFunc()
+PonkReceiver::receiveThreadFunc()
 {
 	unsigned char buffer[65536];
 
@@ -216,7 +216,7 @@ PonkInput::receiveThreadFunc()
 
 
 void
-PonkInput::parseAndStoreFrame(unsigned int senderIdentifier,
+PonkReceiver::parseAndStoreFrame(unsigned int senderIdentifier,
 							  const char* senderNameRaw,
 							  const std::vector<unsigned char>& data)
 {
@@ -355,7 +355,7 @@ PonkInput::parseAndStoreFrame(unsigned int senderIdentifier,
 // ---------------------------------------------------------------------------
 
 void
-PonkInput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
+PonkReceiver::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 {
 	m_errorMessage.clear();
 
@@ -509,7 +509,7 @@ PonkInput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 
 
 void
-PonkInput::executeVBO(SOP_VBOOutput* output, const OP_Inputs* inputs, void* reserved)
+PonkReceiver::executeVBO(SOP_VBOOutput* output, const OP_Inputs* inputs, void* reserved)
 {
 }
 
@@ -519,13 +519,13 @@ PonkInput::executeVBO(SOP_VBOOutput* output, const OP_Inputs* inputs, void* rese
 // ---------------------------------------------------------------------------
 
 int32_t
-PonkInput::getNumInfoCHOPChans(void* reserved)
+PonkReceiver::getNumInfoCHOPChans(void* reserved)
 {
 	return 3;
 }
 
 void
-PonkInput::getInfoCHOPChan(int32_t index, OP_InfoCHOPChan* chan, void* reserved)
+PonkReceiver::getInfoCHOPChan(int32_t index, OP_InfoCHOPChan* chan, void* reserved)
 {
 	switch (index)
 	{
@@ -550,7 +550,7 @@ PonkInput::getInfoCHOPChan(int32_t index, OP_InfoCHOPChan* chan, void* reserved)
 // ---------------------------------------------------------------------------
 
 bool
-PonkInput::getInfoDATSize(OP_InfoDATSize* infoSize, void* reserved)
+PonkReceiver::getInfoDATSize(OP_InfoDATSize* infoSize, void* reserved)
 {
 	infoSize->rows = 1 + static_cast<int32_t>(m_senderList.size());
 	infoSize->cols = 2;
@@ -559,7 +559,7 @@ PonkInput::getInfoDATSize(OP_InfoDATSize* infoSize, void* reserved)
 }
 
 void
-PonkInput::getInfoDATEntries(int32_t index, int32_t nEntries,
+PonkReceiver::getInfoDATEntries(int32_t index, int32_t nEntries,
 							 OP_InfoDATEntries* entries, void* reserved)
 {
 	if (index == 0)
@@ -583,7 +583,7 @@ PonkInput::getInfoDATEntries(int32_t index, int32_t nEntries,
 // ---------------------------------------------------------------------------
 
 void
-PonkInput::setupParameters(OP_ParameterManager* manager, void* reserved)
+PonkReceiver::setupParameters(OP_ParameterManager* manager, void* reserved)
 {
 	// Active toggle (default ON for receiver)
 	{
@@ -616,7 +616,7 @@ PonkInput::setupParameters(OP_ParameterManager* manager, void* reserved)
 }
 
 void
-PonkInput::pulsePressed(const char* name, void* reserved)
+PonkReceiver::pulsePressed(const char* name, void* reserved)
 {
 	if (strcmp(name, "Refresh") == 0)
 	{
@@ -626,7 +626,7 @@ PonkInput::pulsePressed(const char* name, void* reserved)
 }
 
 void
-PonkInput::buildDynamicMenu(const OP_Inputs* inputs, OP_BuildDynamicMenuInfo* info, void* reserved1)
+PonkReceiver::buildDynamicMenu(const OP_Inputs* inputs, OP_BuildDynamicMenuInfo* info, void* reserved1)
 {
 	if (strcmp(info->name, "Sender") != 0)
 		return;
@@ -643,7 +643,7 @@ PonkInput::buildDynamicMenu(const OP_Inputs* inputs, OP_BuildDynamicMenuInfo* in
 }
 
 void
-PonkInput::getErrorString(OP_String* error, void* reserved)
+PonkReceiver::getErrorString(OP_String* error, void* reserved)
 {
 	error->setString(m_errorMessage.c_str());
 }

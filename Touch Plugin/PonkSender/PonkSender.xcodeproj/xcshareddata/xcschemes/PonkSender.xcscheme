@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E227272621B6FEB100905532"
-               BuildableName = "PonkOutput.plugin"
-               BlueprintName = "PonkOutput"
-               ReferencedContainer = "container:PonkOutput.xcodeproj">
+               BuildableName = "PonkSender.plugin"
+               BlueprintName = "PonkSender"
+               ReferencedContainer = "container:PonkSender.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -51,9 +51,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E227272621B6FEB100905532"
-            BuildableName = "PonkOutput.plugin"
-            BlueprintName = "PonkOutput"
-            ReferencedContainer = "container:PonkOutput.xcodeproj">
+            BuildableName = "PonkSender.plugin"
+            BlueprintName = "PonkSender"
+            ReferencedContainer = "container:PonkSender.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

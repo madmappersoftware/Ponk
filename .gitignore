@@ -367,3 +367,7 @@ CMakeFiles
 CMakeCache.txt
 *.cmake
 Makefile
+
+# Claude Code
+.claude/
+CLAUDE.md

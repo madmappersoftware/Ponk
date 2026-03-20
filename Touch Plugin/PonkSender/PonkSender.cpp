@@ -1,4 +1,4 @@
-#include "PonkOutput.h"
+#include "PonkSender.h"
 
 #include <algorithm>
 #include <stdio.h>
@@ -29,10 +29,10 @@ extern "C"
 		// The opType is the unique name for this TOP. It must start with a 
 		// capital A-Z character, and all the following characters must lower case
 		// or numbers (a-z, 0-9)
-		info->customOPInfo.opType->setString("Ponkoutput");
+		info->customOPInfo.opType->setString("Ponksender");
 
 		// The opLabel is the text that will show up in the OP Create Dialog
-		info->customOPInfo.opLabel->setString("Ponk Output");
+		info->customOPInfo.opLabel->setString("Ponk Sender");
 
 		// Will be turned into a 3 letter icon on the nodes
 		info->customOPInfo.opIcon->setString("PKO");
@@ -55,7 +55,7 @@ extern "C"
 	{
 		// Return a new instance of your class every time this is called.
 		// It will be called once per SOP that is using the .dll
-		return new PonkOutput(info);
+		return new PonkSender(info);
 	}
 
 	DLLEXPORT
@@ -65,24 +65,24 @@ extern "C"
 		// Delete the instance here, this will be called when
 		// Touch is shutting down, when the SOP using that instance is deleted, or
 		// if the SOP loads a different DLL
-		delete (PonkOutput*)instance;
+		delete (PonkSender*)instance;
 	}
 
 };
 
 
-PonkOutput::PonkOutput(const OP_NodeInfo* info)
+PonkSender::PonkSender(const OP_NodeInfo* info)
 {
 	socket = new DatagramSocket(INADDR_ANY, 0);
 }
 
-PonkOutput::~PonkOutput()
+PonkSender::~PonkSender()
 {
 	delete socket;
 }
 
 void
-PonkOutput::getGeneralInfo(SOP_GeneralInfo* ginfo, const OP_Inputs* inputs, void* reserved)
+PonkSender::getGeneralInfo(SOP_GeneralInfo* ginfo, const OP_Inputs* inputs, void* reserved)
 {
 	// This will cause the node to cook every frame
 	ginfo->cookEveryFrameIfAsked = false;
@@ -94,29 +94,29 @@ PonkOutput::getGeneralInfo(SOP_GeneralInfo* ginfo, const OP_Inputs* inputs, void
 
 }
 
-void PonkOutput::push16bits(std::vector<unsigned char>& fullData, unsigned short value) {
+void PonkSender::push16bits(std::vector<unsigned char>& fullData, unsigned short value) {
 	fullData.push_back(static_cast<unsigned char>((value >> 0) & 0xFF));
 	fullData.push_back(static_cast<unsigned char>((value >> 8) & 0xFF));
 }
 
-void PonkOutput::push32bits(std::vector<unsigned char>& fullData, int value) {
+void PonkSender::push32bits(std::vector<unsigned char>& fullData, int value) {
 	fullData.push_back(static_cast<unsigned char>((value >> 0) & 0xFF));
 	fullData.push_back(static_cast<unsigned char>((value >> 8) & 0xFF));
 	fullData.push_back(static_cast<unsigned char>((value >> 16) & 0xFF));
 	fullData.push_back(static_cast<unsigned char>((value >> 24) & 0xFF));
 }
 
-void PonkOutput::pushFloat32(std::vector<unsigned char>& fullData, float value) {
+void PonkSender::pushFloat32(std::vector<unsigned char>& fullData, float value) {
     push32bits(fullData,*reinterpret_cast<int*>(&value));
 }
 
-void PonkOutput::pushMetaData(std::vector<unsigned char>& fullData, const char(&eightCC)[9], int value) {
+void PonkSender::pushMetaData(std::vector<unsigned char>& fullData, const char(&eightCC)[9], int value) {
 	for (int i = 0; i < 8; i++) {
 		fullData.push_back(eightCC[i]);
 	}
 	push32bits(fullData, value);
 }
-void PonkOutput::pushMetaData(std::vector<unsigned char>& fullData, const char(&eightCC)[9], float value) {
+void PonkSender::pushMetaData(std::vector<unsigned char>& fullData, const char(&eightCC)[9], float value) {
 	for (int i = 0; i < 8; i++) {
 		fullData.push_back(eightCC[i]);
 	}
@@ -125,7 +125,7 @@ void PonkOutput::pushMetaData(std::vector<unsigned char>& fullData, const char(&
 
 #define CLAMP_IN_ZERO_ONE(x) ((x) < 0 ? 0 : ((x) > 1 ? 1 : (x)))
 
-void PonkOutput::pushPoint_XY_F32_RGB_U8(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor) {
+void PonkSender::pushPoint_XY_F32_RGB_U8(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor) {
     pushFloat32(fullData, pointPosition.x);
     pushFloat32(fullData, pointPosition.y);
     fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.r) * 255));
@@ -133,7 +133,7 @@ void PonkOutput::pushPoint_XY_F32_RGB_U8(std::vector<unsigned char>& fullData, c
     fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.b) * 255));
 }
 
-// void PonkOutput::pushPoint_XYRGB_U16(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor) {
+// void PonkSender::pushPoint_XYRGB_U16(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor) {
 //     if (pointPosition.x < -1 || pointPosition.x > 1 || pointPosition.y < -1 || pointPosition.y > 1) {
 //         // Clamp position and set color = 0
 //         unsigned short x16Bits, y16Bits;
@@ -183,7 +183,7 @@ void PonkOutput::pushPoint_XY_F32_RGB_U8(std::vector<unsigned char>& fullData, c
 //     }
 // }
 
-std::map<std::string, float*> PonkOutput::getMetadata(const OP_SOPInput* sinput) {
+std::map<std::string, float*> PonkSender::getMetadata(const OP_SOPInput* sinput) {
 	std::map<std::string, float*> metadata;
 	
 	// check how many metadata attribute the sop input contains	
@@ -202,7 +202,7 @@ std::map<std::string, float*> PonkOutput::getMetadata(const OP_SOPInput* sinput)
 }
 
 Matrix44<double>
-PonkOutput::buildCameraTransProjMatrix(const OP_Inputs* inputs)
+PonkSender::buildCameraTransProjMatrix(const OP_Inputs* inputs)
 {
 
 	// get the camera object
@@ -254,7 +254,7 @@ PonkOutput::buildCameraTransProjMatrix(const OP_Inputs* inputs)
 
 
 void
-PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
+PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 {
 	m_errorMessage.clear();
 
@@ -437,7 +437,7 @@ PonkOutput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 }
 
 void
-PonkOutput::executeVBO(SOP_VBOOutput* output,
+PonkSender::executeVBO(SOP_VBOOutput* output,
 						const OP_Inputs* inputs,
 						void* reserved)
 {
@@ -449,7 +449,7 @@ PonkOutput::executeVBO(SOP_VBOOutput* output,
 //-----------------------------------------------------------------------------------------------------
 
 int32_t
-PonkOutput::getNumInfoCHOPChans(void* reserved)
+PonkSender::getNumInfoCHOPChans(void* reserved)
 {
 	// We return the number of channel we want to output to any Info CHOP
 	// connected to the CHOP. In this example we are just going to send 4 channels.
@@ -457,14 +457,14 @@ PonkOutput::getNumInfoCHOPChans(void* reserved)
 }
 
 void
-PonkOutput::getInfoCHOPChan(int32_t index,
+PonkSender::getInfoCHOPChan(int32_t index,
 								OP_InfoCHOPChan* chan, void* reserved)
 {
 
 }
 
 bool
-PonkOutput::getInfoDATSize(OP_InfoDATSize* infoSize, void* reserved)
+PonkSender::getInfoDATSize(OP_InfoDATSize* infoSize, void* reserved)
 {
 	infoSize->rows = 0;
 	infoSize->cols = 0;
@@ -475,7 +475,7 @@ PonkOutput::getInfoDATSize(OP_InfoDATSize* infoSize, void* reserved)
 }
 
 void
-PonkOutput::getInfoDATEntries(int32_t index,
+PonkSender::getInfoDATEntries(int32_t index,
 								int32_t nEntries,
 								OP_InfoDATEntries* entries,
 								void* reserved)
@@ -485,7 +485,7 @@ PonkOutput::getInfoDATEntries(int32_t index,
 
 
 void
-PonkOutput::setupParameters(OP_ParameterManager* manager, void* reserved)
+PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 {	
 	// Active
 	{
@@ -629,12 +629,12 @@ PonkOutput::setupParameters(OP_ParameterManager* manager, void* reserved)
 }
 
 void
-PonkOutput::pulsePressed(const char* name, void* reserved)
+PonkSender::pulsePressed(const char* name, void* reserved)
 {
 }
 
 void
-PonkOutput::getErrorString(OP_String* error, void* reserved)
+PonkSender::getErrorString(OP_String* error, void* reserved)
 {
 	error->setString(m_errorMessage.c_str());
 }

@@ -7,17 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C9939CF7282AE5B700381246 /* PonkOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9939CF5282AE5B700381246 /* PonkOutput.cpp */; };
+		C9939CF7282AE5B700381246 /* PonkSender.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9939CF5282AE5B700381246 /* PonkSender.cpp */; };
 		C9939CFD282AE79B00381246 /* DatagramSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9939CFB282AE79B00381246 /* DatagramSocket.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		C98BE64728C93A5F00BA61C4 /* PonkDefs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PonkDefs.h; path = ../Common/Cpp/PonkDefs.h; sourceTree = "<group>"; };
-		C9939CF5282AE5B700381246 /* PonkOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PonkOutput.cpp; sourceTree = "<group>"; };
-		C9939CF6282AE5B700381246 /* PonkOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PonkOutput.h; sourceTree = "<group>"; };
+		C9939CF5282AE5B700381246 /* PonkSender.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PonkSender.cpp; sourceTree = "<group>"; };
+		C9939CF6282AE5B700381246 /* PonkSender.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PonkSender.h; sourceTree = "<group>"; };
 		C9939CFB282AE79B00381246 /* DatagramSocket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DatagramSocket.cpp; sourceTree = "<group>"; };
 		C9939CFC282AE79B00381246 /* DatagramSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DatagramSocket.h; sourceTree = "<group>"; };
-		E227272721B6FEB100905532 /* PonkOutput.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PonkOutput.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
+		E227272721B6FEB100905532 /* PonkSender.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PonkSender.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		E227272A21B6FEB100905532 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E227273021B6FF1F00905532 /* CPlusPlus_Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CPlusPlus_Common.h; sourceTree = "<group>"; };
 		E227273121B6FF1F00905532 /* GL_Extensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GL_Extensions.h; sourceTree = "<group>"; };
@@ -48,7 +48,7 @@
 		E227271E21B6FEB100905532 = {
 			isa = PBXGroup;
 			children = (
-				E227272921B6FEB100905532 /* PonkOutput */,
+				E227272921B6FEB100905532 /* PonkSender */,
 				E227272821B6FEB100905532 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,32 +56,32 @@
 		E227272821B6FEB100905532 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E227272721B6FEB100905532 /* PonkOutput.plugin */,
+				E227272721B6FEB100905532 /* PonkSender.plugin */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		E227272921B6FEB100905532 /* PonkOutput */ = {
+		E227272921B6FEB100905532 /* PonkSender */ = {
 			isa = PBXGroup;
 			children = (
 				C98BE64728C93A5F00BA61C4 /* PonkDefs.h */,
 				C9939CFA282AE79B00381246 /* DatagramSocket */,
 				E227273021B6FF1F00905532 /* CPlusPlus_Common.h */,
 				E227273121B6FF1F00905532 /* GL_Extensions.h */,
-				C9939CF5282AE5B700381246 /* PonkOutput.cpp */,
-				C9939CF6282AE5B700381246 /* PonkOutput.h */,
+				C9939CF5282AE5B700381246 /* PonkSender.cpp */,
+				C9939CF6282AE5B700381246 /* PonkSender.h */,
 				E227273221B6FF1F00905532 /* SOP_CPlusPlusBase.h */,
 				E227272A21B6FEB100905532 /* Info.plist */,
 			);
-			name = PonkOutput;
+			name = PonkSender;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E227272621B6FEB100905532 /* PonkOutput */ = {
+		E227272621B6FEB100905532 /* PonkSender */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E227272D21B6FEB100905532 /* Build configuration list for PBXNativeTarget "PonkOutput" */;
+			buildConfigurationList = E227272D21B6FEB100905532 /* Build configuration list for PBXNativeTarget "PonkSender" */;
 			buildPhases = (
 				E227272321B6FEB100905532 /* Sources */,
 				E227272421B6FEB100905532 /* Frameworks */,
@@ -91,9 +91,9 @@
 			);
 			dependencies = (
 			);
-			name = PonkOutput;
+			name = PonkSender;
 			productName = SimpleShapes;
-			productReference = E227272721B6FEB100905532 /* PonkOutput.plugin */;
+			productReference = E227272721B6FEB100905532 /* PonkSender.plugin */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
@@ -110,7 +110,7 @@
 					};
 				};
 			};
-			buildConfigurationList = E227272221B6FEB100905532 /* Build configuration list for PBXProject "PonkOutput" */;
+			buildConfigurationList = E227272221B6FEB100905532 /* Build configuration list for PBXProject "PonkSender" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -123,7 +123,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				E227272621B6FEB100905532 /* PonkOutput */,
+				E227272621B6FEB100905532 /* PonkSender */,
 			);
 		};
 /* End PBXProject section */
@@ -143,7 +143,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C9939CF7282AE5B700381246 /* PonkOutput.cpp in Sources */,
+				C9939CF7282AE5B700381246 /* PonkSender.cpp in Sources */,
 				C9939CFD282AE79B00381246 /* DatagramSocket.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -276,7 +276,7 @@
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				INSTALL_PATH = /;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Tyrell.PonkOutput;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Tyrell.PonkSender;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = plugin;
 			};
@@ -294,7 +294,7 @@
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				INSTALL_PATH = /;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Tyrell.PonkOutput;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Tyrell.PonkSender;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = plugin;
 			};
@@ -303,7 +303,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E227272221B6FEB100905532 /* Build configuration list for PBXProject "PonkOutput" */ = {
+		E227272221B6FEB100905532 /* Build configuration list for PBXProject "PonkSender" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E227272B21B6FEB100905532 /* Debug */,
@@ -312,7 +312,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E227272D21B6FEB100905532 /* Build configuration list for PBXNativeTarget "PonkOutput" */ = {
+		E227272D21B6FEB100905532 /* Build configuration list for PBXNativeTarget "PonkSender" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E227272E21B6FEB100905532 /* Debug */,

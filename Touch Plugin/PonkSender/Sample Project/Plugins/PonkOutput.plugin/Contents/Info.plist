@@ -7,13 +7,13 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>PonkOutput</string>
+	<string>PonkSender</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.Tyrell.PonkOutput</string>
+	<string>com.Tyrell.PonkSender</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>PonkOutput</string>
+	<string>PonkSender</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>

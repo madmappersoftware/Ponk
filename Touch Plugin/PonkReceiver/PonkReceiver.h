@@ -33,7 +33,7 @@ struct SenderFrame
 	std::vector<ReceivedPath> paths;
 };
 
-class PonkInput : public SOP_CPlusPlusBase
+class PonkReceiver : public SOP_CPlusPlusBase
 {
 public:
 
