@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -22,7 +23,7 @@ struct ReceivedPoint
 struct ReceivedPath
 {
 	std::vector<ReceivedPoint> points;
-	std::map<std::string, float> metadata;
+	std::unordered_map<std::string, float> metadata;
 };
 
 struct SenderFrame
@@ -88,22 +89,23 @@ private:
 
 		void reset()
 		{
-			frameNumber = -1;
-			chunkCount = -1;
-			dataCrc = 0;
-			for (int i = 0; i < 255; i++)
+			int count = (chunkCount > 0) ? chunkCount : 0;
+			for (int i = 0; i < count; i++)
 			{
 				received[i] = false;
 				chunks[i].clear();
 			}
+			frameNumber = -1;
+			chunkCount = -1;
+			dataCrc = 0;
 		}
 	};
 
-	std::map<unsigned int, ChunkAssembly> m_assemblies;
+	std::unordered_map<unsigned int, ChunkAssembly> m_assemblies;
 
 	// Protected by m_mutex: latest complete frame per sender
 	std::mutex m_mutex;
-	std::map<unsigned int, SenderFrame> m_latestFrames;
+	std::unordered_map<unsigned int, SenderFrame> m_latestFrames;
 
 	std::string m_errorMessage;
 

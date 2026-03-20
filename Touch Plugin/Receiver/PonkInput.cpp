@@ -176,7 +176,7 @@ PonkInput::receiveThreadFunc()
 
 		// Concatenate all chunk data
 		std::vector<unsigned char> allData;
-		allData.reserve(255 * PONK_MAX_CHUNK_SIZE);
+		allData.reserve(static_cast<size_t>(header->chunkCount) * PONK_MAX_CHUNK_SIZE);
 		for (int i = 0; i < header->chunkCount; i++)
 			allData.insert(allData.end(), asm_.chunks[i].begin(), asm_.chunks[i].end());
 
@@ -230,7 +230,10 @@ PonkInput::parseAndStoreFrame(unsigned int senderIdentifier,
 			break;
 		for (int m = 0; m < metaCount; m++)
 		{
-			std::string key(reinterpret_cast<const char*>(&data[offset]), 8);
+			const char* keyPtr = reinterpret_cast<const char*>(&data[offset]);
+			int keyLen = 8;
+			while (keyLen > 0 && keyPtr[keyLen - 1] == '\0') --keyLen;
+			std::string key(keyPtr, keyLen);
 			offset += 8;
 			float value;
 			memcpy(&value, &data[offset], sizeof(float));
@@ -335,17 +338,14 @@ PonkInput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 	if (m_latestFrames.empty())
 		return;
 
-	// Always populate the sender list (for Info DAT / dynamic menu),
-	// but only output geometry for matching senders.
-	for (auto& kv : m_latestFrames)
-		m_senderList.push_back({kv.second.senderName, kv.second.senderIdentifier});
-
-	// Collect metadata keys and total point count for matching senders
-	std::map<std::string, int> metaKeyIndex;
+	// Populate sender list and collect metadata keys / total point count for matching senders
+	std::unordered_map<std::string, int> metaKeyIndex;
 	int totalPoints = 0;
 
 	for (auto& kv : m_latestFrames)
 	{
+		m_senderList.push_back({kv.second.senderName, kv.second.senderIdentifier});
+
 		if (!filterAll && kv.first != filterSenderId)
 			continue;
 
@@ -355,10 +355,7 @@ PonkInput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		{
 			totalPoints += static_cast<int>(path.points.size());
 			for (auto& meta : path.metadata)
-			{
-				if (metaKeyIndex.find(meta.first) == metaKeyIndex.end())
-					metaKeyIndex[meta.first] = static_cast<int>(metaKeyIndex.size());
-			}
+				metaKeyIndex.try_emplace(meta.first, static_cast<int>(metaKeyIndex.size()));
 		}
 	}
 
@@ -371,6 +368,7 @@ PonkInput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		arr.resize(totalPoints, 0.0f);
 
 	int pointIndex = 0;
+	std::vector<int32_t> indices;
 
 	for (auto& kv : m_latestFrames)
 	{
@@ -411,7 +409,7 @@ PonkInput::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 			}
 
 			// Create a line primitive from this path's points
-			std::vector<int32_t> indices(path.points.size());
+			indices.resize(path.points.size());
 			for (size_t i = 0; i < path.points.size(); i++)
 				indices[i] = firstPtIdx + static_cast<int32_t>(i);
 
@@ -533,11 +531,25 @@ PonkInput::setupParameters(OP_ParameterManager* manager, void* reserved)
 		OP_ParAppendResult res = manager->appendDynamicStringMenu(sp);
 		assert(res == OP_ParAppendResult::Success);
 	}
+
+	// Clear all received sender data
+	{
+		OP_NumericParameter np;
+		np.name = "Refresh";
+		np.label = "Refresh";
+		OP_ParAppendResult res = manager->appendPulse(np);
+		assert(res == OP_ParAppendResult::Success);
+	}
 }
 
 void
 PonkInput::pulsePressed(const char* name, void* reserved)
 {
+	if (strcmp(name, "Refresh") == 0)
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		m_latestFrames.clear();
+	}
 }
 
 void
