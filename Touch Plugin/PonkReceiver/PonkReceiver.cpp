@@ -24,7 +24,7 @@ FillSOPPluginInfo(SOP_PluginInfo *info)
 	info->customOPInfo.opLabel->setString("Ponk Receiver");
 
 	// Three-letter icon on the node
-	info->customOPInfo.opIcon->setString("PKI");
+	info->customOPInfo.opIcon->setString("PKR");
 
 	info->customOPInfo.authorName->setString("Tyrell");
 	info->customOPInfo.authorEmail->setString("colas@tyrell.studio");

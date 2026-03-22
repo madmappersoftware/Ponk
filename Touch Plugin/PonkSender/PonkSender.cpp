@@ -35,7 +35,7 @@ extern "C"
 		info->customOPInfo.opLabel->setString("Ponk Sender");
 
 		// Will be turned into a 3 letter icon on the nodes
-		info->customOPInfo.opIcon->setString("PKO");
+		info->customOPInfo.opIcon->setString("PKS");
 
 		// Information about the author of this OP
 		info->customOPInfo.authorName->setString("Tyrell");
@@ -132,56 +132,6 @@ void PonkSender::pushPoint_XY_F32_RGB_U8(std::vector<unsigned char>& fullData, c
     fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.g) * 255));
     fullData.push_back(static_cast<unsigned char>(CLAMP_IN_ZERO_ONE(pointColor.b) * 255));
 }
-
-// void PonkSender::pushPoint_XYRGB_U16(std::vector<unsigned char>& fullData, const Position& pointPosition, const Color& pointColor) {
-//     if (pointPosition.x < -1 || pointPosition.x > 1 || pointPosition.y < -1 || pointPosition.y > 1) {
-//         // Clamp position and set color = 0
-//         unsigned short x16Bits, y16Bits;
-//         if (pointPosition.x < -1) {
-//             x16Bits = 0;
-//         } else if (pointPosition.x > 1) {
-//             x16Bits = 65535;
-//         } else {
-//             x16Bits = static_cast<unsigned short>(((pointPosition.x + 1) / 2) * 65535);
-//         }
-//         if (pointPosition.y < -1) {
-//             y16Bits = 0;
-//         } else if (pointPosition.y > 1) {
-//             y16Bits = 65535;
-//         } else {
-//             y16Bits = static_cast<unsigned short>(((pointPosition.y + 1) / 2) * 65535);
-//         }
-
-//         // Push X - LSB first
-//         push16bits(fullData, x16Bits);
-//         // Push Y - LSB first
-//         push16bits(fullData, y16Bits);
-//         // Push R - LSB first
-//         push16bits(fullData, 0);
-//         // Push G - LSB first
-//         push16bits(fullData, 0);
-//         // Push B - LSB first
-//         push16bits(fullData, 0);
-//     } else {
-//         const auto x16Bits = static_cast<unsigned short>(((pointPosition.x + 1) / 2) * 65535);
-//         const auto y16Bits = static_cast<unsigned short>(((pointPosition.y + 1) / 2) * 65535);
-
-//         const auto r16Bits = static_cast<unsigned short>(((pointColor.r + 1) / 2) * 65535);
-//         const auto g16Bits = static_cast<unsigned short>(((pointColor.g + 1) / 2) * 65535);
-//         const auto b16Bits = static_cast<unsigned short>(((pointColor.b + 1) / 2) * 65535);
-
-//         // Push X - LSB first
-//         push16bits(fullData, x16Bits);
-//         // Push Y - LSB first
-//         push16bits(fullData, y16Bits);
-//         // Push R - LSB first
-//         push16bits(fullData, r16Bits);
-//         // Push G - LSB first
-//         push16bits(fullData, g16Bits);
-//         // Push B - LSB first
-//         push16bits(fullData, b16Bits);
-//     }
-// }
 
 std::map<std::string, float*> PonkSender::getMetadata(const OP_SOPInput* sinput) {
 	std::map<std::string, float*> metadata;
