@@ -7,8 +7,12 @@
 #include <assert.h>
 #include <iostream>
 
-#ifndef M_PI // M_PI not defined on Windows
-	#define M_PI 3.14159265358979323846
+#ifdef _WIN32
+	#include <Python.h>
+	#include <structmember.h>
+#else
+	#include <Python/Python.h>
+	#include <Python/structmember.h>
 #endif
 
 // These functions are basic C function, which the DLL loader can find
@@ -47,6 +51,8 @@ extern "C"
 
 		// Custom website URL that the Operator Help can point to
 		info->customOPInfo.opHelpURL->setString("yourwebsiteurl.com");
+
+		info->customOPInfo.pythonVersion->setString(PY_VERSION);
 	}
 
 	DLLEXPORT
@@ -71,7 +77,7 @@ extern "C"
 };
 
 
-PonkSender::PonkSender(const OP_NodeInfo* info)
+PonkSender::PonkSender(const OP_NodeInfo* info) : myNodeInfo(info)
 {
 	socket = new DatagramSocket(INADDR_ANY, 0);
 }
@@ -207,6 +213,14 @@ void
 PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 {
 	m_errorMessage.clear();
+
+	// Run Python code the first time the node executes
+	// to set the expression on the camera matrix 
+	if (m_firstExecute)
+	{
+		m_firstExecute = false;
+		PyRun_SimpleString(""); // write your Python code here
+	}
 
 	// Disable the netaddress parameter if multicast is enabled
 	if (inputs->getParInt("Multicast")) {

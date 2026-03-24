@@ -83,4 +83,8 @@ private:
 
 	/// Current error message; when non-empty, the node is in error state.
 	std::string m_errorMessage;
+
+	const OP_NodeInfo* myNodeInfo;
+
+	bool m_firstExecute = true;
 };
