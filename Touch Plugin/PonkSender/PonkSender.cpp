@@ -6,6 +6,7 @@
 #include <math.h>
 #include <assert.h>
 #include <iostream>
+#include <string>
 
 #ifdef _WIN32
 	#include <Python.h>
@@ -216,10 +217,26 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 
 	// Run Python code the first time the node executes
 	// to set the expression on the camera matrix 
+	// we can get the camera projection matrix in C++
+	// therefore we have parameters to set the camera projection matrix
+	// but there is also no way to set the expression on there paramters from c++
+	// therefore we need to run Python code to set the expression on the parameters
 	if (m_firstExecute)
 	{
 		m_firstExecute = false;
-		PyRun_SimpleString(""); // write your Python code here
+		if (myNodeInfo && myNodeInfo->opPath)
+		{
+			std::string py = std::string("path = \"") + myNodeInfo->opPath + "\"\n"
+				"node = op(path)\n"
+				"for matrix_row, param_row in enumerate([\"a\", \"b\", \"c\", \"d\"]):\n"
+				"    for matrix_col, param_col in enumerate(range(1, 5)):\n"
+				"        par_name = f\"Projectionmatrix{param_row}{param_col}\"\n"
+				"        par = node.par[par_name]\n"
+				"        par.mode = ParMode.EXPRESSION\n"
+				"        default_value = 1 if matrix_col == matrix_row else 0\n"
+				"        par.expr = f\"{default_value} if not me.par.Camera else op(me.par.Camera.eval()).projection(1,1)[{matrix_row},{matrix_col}]\"\n";
+			PyRun_SimpleString(py.c_str());
+		}
 	}
 
 	// Disable the netaddress parameter if multicast is enabled
