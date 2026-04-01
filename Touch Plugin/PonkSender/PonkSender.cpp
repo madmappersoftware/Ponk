@@ -474,6 +474,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Active";
 		np.label = "Active";
+		np.page = "Parameters";
 
 		OP_ParAppendResult res = manager->appendToggle(np);
         assert(res == OP_ParAppendResult::Success);
@@ -484,6 +485,8 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Multicast";
 		np.label = "Multicast";
+		np.defaultValues[0] = 1;
+		np.page = "Parameters";
 
 		OP_ParAppendResult res = manager->appendToggle(np);
         assert(res == OP_ParAppendResult::Success);
@@ -494,6 +497,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Netaddress";
 		np.label = "Network Address";
+		np.page = "Parameters";
 
 		// Minimum values
 		np.minValues[0] = 0;
@@ -523,6 +527,8 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Uid";
 		np.label = "Unique ID";
+		np.page = "Parameters";
+
 		np.minValues[0] = 0;
 		np.maxValues[0] = 1024;
 		np.defaultValues[0] = 0;
@@ -541,6 +547,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 		OP_StringParameter sp;
 		sp.name = "Sendername";
 		sp.label = "Sender Name";
+		sp.page = "Parameters";
 		sp.defaultValue = "Touch Designer";
 		OP_ParAppendResult res = manager->appendString(sp);
 		assert(res == OP_ParAppendResult::Success);
@@ -554,8 +561,20 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		sp.name = "Camera";
 		sp.label = "Camera";
+		sp.page = "Parameters";
 
 		OP_ParAppendResult res = manager->appendObject(sp);
+		assert(res == OP_ParAppendResult::Success);
+	}
+
+	// Header for camera matrix
+	{
+		OP_StringParameter sp;
+
+		sp.name = "Infomatrixheader";
+		sp.label = "These utility parameters are not supposed to be touched.";
+		sp.page = "Settings";
+		OP_ParAppendResult res = manager->appendHeader(sp);
 		assert(res == OP_ParAppendResult::Success);
 	}
 
@@ -565,6 +584,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Projectionmatrixa";
 		np.label = "Projection Matrix A";
+		np.page = "Settings";
 
 		np.defaultValues[0] = 1;
 
@@ -579,6 +599,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Projectionmatrixb";
 		np.label = "Projection Matrix B";
+		np.page = "Settings";
 
 		OP_ParAppendResult res = manager->appendFloat(np, 4);
 		assert(res == OP_ParAppendResult::Success);
@@ -591,6 +612,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Projectionmatrixc";
 		np.label = "Projection Matrix C";
+		np.page = "Settings";
 
 		OP_ParAppendResult res = manager->appendFloat(np, 4);
 		assert(res == OP_ParAppendResult::Success);
@@ -603,6 +625,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Projectionmatrixd";
 		np.label = "Projection Matrix D";
+		np.page = "Settings";
 
 		OP_ParAppendResult res = manager->appendFloat(np, 4);
 		assert(res == OP_ParAppendResult::Success);
