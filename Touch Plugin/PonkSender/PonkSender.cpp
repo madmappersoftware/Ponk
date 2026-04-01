@@ -12,8 +12,8 @@
 	#include <Python.h>
 	#include <structmember.h>
 #else
-	#include <Python/Python.h>
-	#include <Python/structmember.h>
+	#include <Python.h>
+	#include <structmember.h>
 #endif
 
 // These functions are basic C function, which the DLL loader can find
