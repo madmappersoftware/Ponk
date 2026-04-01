@@ -290,7 +290,7 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		if (sinput->hasColors()) {
 			colors = sinput->getColors()->colors;
 		}
-		
+
 		// get the metadata
 		std::map<std::string, float*> metadata = getMetadata(sinput);
 
@@ -298,8 +298,6 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 
 		for (int primitiveNumber = 0; primitiveNumber < sinput->getNumPrimitives(); primitiveNumber++)
 		{
-			//std::cout << "-------------------- primitive : " << i << std::endl;
-
             // Write Format Data
             fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8);
 
@@ -318,7 +316,7 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 				size_t copyLen = std::min<size_t>(kv.first.size(), 8u);
 				std::copy(kv.first.begin(), kv.first.begin() + copyLen, charMetadata);
 
-				pushMetaData(fullData, charMetadata, kv.second[primVert[0]]);  
+				pushMetaData(fullData, charMetadata, kv.second[primVert[0]]);
 			}
 
 			// check if the primitve is closed
@@ -329,8 +327,6 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
                 push16bits(fullData, numPoints);
             }
 
-            
-                
 			for (int pointNumber = 0; pointNumber < numPoints; pointNumber++) {
 				Position pointPosition = cameraTransProj * ptArr[primVert[pointNumber]];
 				pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[pointNumber]]:s_white);
@@ -340,7 +336,6 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 			if (primInfo.isClosed) {
 				Position pointPosition = cameraTransProj * ptArr[primVert[0]];
                 pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[0]]:s_white);
-
 			}
 		}
 
@@ -355,7 +350,6 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 
 		// Get the Unique identifier from the attribute
 		int uid = inputs->getParInt("Uid");
-		//std::cout << "Uid " << uid << std::endl;
 
         // Compute packet CRC
         unsigned int dataCrc = 0;
@@ -384,12 +378,13 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 			destAddr.port = PONK_PORT;
 		}
 
-		while (written < fullData.size()) {
-			// Write packet header - 8 bytes
+		// Always send at least one packet — even with empty fullData (no shapes = empty frame)
+		do {
+			// Write packet header
 			GeomUdpHeader header;
 			strncpy(header.headerString, PONK_HEADER_STRING, sizeof(header.headerString));
 			header.protocolVersion = 0;
-			header.senderIdentifier = uid; // Unique ID (so when changing name in sender, the receiver can just rename existing stream)
+			header.senderIdentifier = uid;
 			strncpy(header.senderName, senderName, sizeof(header.senderName));
 			header.frameNumber = frameNumber;
 			header.chunkCount = chunksCount;
@@ -403,14 +398,15 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 			// Write header
 			memcpy(&packet[0], &header, sizeof(GeomUdpHeader));
 			// Write data
-			memcpy(&packet[sizeof(GeomUdpHeader)], &fullData[written], dataBytesForThisChunk);
+			if (dataBytesForThisChunk > 0)
+				memcpy(&packet[sizeof(GeomUdpHeader)], &fullData[written], dataBytesForThisChunk);
 			written += dataBytesForThisChunk;
 
 			// Send the packet
 			socket->sendTo(destAddr, &packet[0], static_cast<unsigned int>(packet.size()));
 
 			chunkNumber++;
-		}
+		} while (written < fullData.size());
 
 		frameNumber++;
 	}
