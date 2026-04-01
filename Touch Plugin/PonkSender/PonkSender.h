@@ -23,6 +23,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <chrono>
 #include "matrix.h"
 
 using namespace TD;
@@ -87,4 +88,8 @@ private:
 	const OP_NodeInfo* myNodeInfo;
 
 	bool m_firstExecute = true;
+
+	int m_lastUid = -1;
+	std::chrono::steady_clock::time_point m_uidChangeTime;
+	bool m_uidJustChanged = false;
 };
