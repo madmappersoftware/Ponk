@@ -12,8 +12,8 @@
 	#include <Python.h>
 	#include <structmember.h>
 #else
-	#include <Python/Python.h>
-	#include <Python/structmember.h>
+	#include <Python.h>
+	#include <structmember.h>
 #endif
 
 // These functions are basic C function, which the DLL loader can find
@@ -351,6 +351,22 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		// Get the Unique identifier from the attribute
 		int uid = inputs->getParInt("Uid");
 
+		// If uid changed, start a 2-second cooldown before sending again
+		if (uid != m_lastUid && m_lastUid != -1)
+		{
+			m_uidChangeTime = std::chrono::steady_clock::now();
+			m_uidJustChanged = true;
+		}
+		m_lastUid = uid;
+
+		if (m_uidJustChanged)
+		{
+			auto elapsed = std::chrono::steady_clock::now() - m_uidChangeTime;
+			if (elapsed < std::chrono::seconds(2))
+				return;
+			m_uidJustChanged = false;
+		}
+
         // Compute packet CRC
         unsigned int dataCrc = 0;
         for (auto v: fullData) {
@@ -470,6 +486,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Active";
 		np.label = "Active";
+		np.page = "Parameters";
 
 		OP_ParAppendResult res = manager->appendToggle(np);
         assert(res == OP_ParAppendResult::Success);
@@ -480,6 +497,8 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Multicast";
 		np.label = "Multicast";
+		np.defaultValues[0] = 1;
+		np.page = "Parameters";
 
 		OP_ParAppendResult res = manager->appendToggle(np);
         assert(res == OP_ParAppendResult::Success);
@@ -490,6 +509,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Netaddress";
 		np.label = "Network Address";
+		np.page = "Parameters";
 
 		// Minimum values
 		np.minValues[0] = 0;
@@ -519,6 +539,8 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Uid";
 		np.label = "Unique ID";
+		np.page = "Parameters";
+
 		np.minValues[0] = 0;
 		np.maxValues[0] = 1024;
 		np.defaultValues[0] = 0;
@@ -537,6 +559,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 		OP_StringParameter sp;
 		sp.name = "Sendername";
 		sp.label = "Sender Name";
+		sp.page = "Parameters";
 		sp.defaultValue = "Touch Designer";
 		OP_ParAppendResult res = manager->appendString(sp);
 		assert(res == OP_ParAppendResult::Success);
@@ -550,8 +573,20 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		sp.name = "Camera";
 		sp.label = "Camera";
+		sp.page = "Parameters";
 
 		OP_ParAppendResult res = manager->appendObject(sp);
+		assert(res == OP_ParAppendResult::Success);
+	}
+
+	// Header for camera matrix
+	{
+		OP_StringParameter sp;
+
+		sp.name = "Infomatrixheader";
+		sp.label = "These utility parameters are not supposed to be touched.";
+		sp.page = "Settings";
+		OP_ParAppendResult res = manager->appendHeader(sp);
 		assert(res == OP_ParAppendResult::Success);
 	}
 
@@ -561,6 +596,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Projectionmatrixa";
 		np.label = "Projection Matrix A";
+		np.page = "Settings";
 
 		np.defaultValues[0] = 1;
 
@@ -575,6 +611,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Projectionmatrixb";
 		np.label = "Projection Matrix B";
+		np.page = "Settings";
 
 		OP_ParAppendResult res = manager->appendFloat(np, 4);
 		assert(res == OP_ParAppendResult::Success);
@@ -587,6 +624,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Projectionmatrixc";
 		np.label = "Projection Matrix C";
+		np.page = "Settings";
 
 		OP_ParAppendResult res = manager->appendFloat(np, 4);
 		assert(res == OP_ParAppendResult::Success);
@@ -599,6 +637,7 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 
 		np.name = "Projectionmatrixd";
 		np.label = "Projection Matrix D";
+		np.page = "Settings";
 
 		OP_ParAppendResult res = manager->appendFloat(np, 4);
 		assert(res == OP_ParAppendResult::Success);
