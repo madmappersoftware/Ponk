@@ -355,7 +355,22 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 
 		// Get the Unique identifier from the attribute
 		int uid = inputs->getParInt("Uid");
-		//std::cout << "Uid " << uid << std::endl;
+
+		// If uid changed, start a 2-second cooldown before sending again
+		if (uid != m_lastUid && m_lastUid != -1)
+		{
+			m_uidChangeTime = std::chrono::steady_clock::now();
+			m_uidJustChanged = true;
+		}
+		m_lastUid = uid;
+
+		if (m_uidJustChanged)
+		{
+			auto elapsed = std::chrono::steady_clock::now() - m_uidChangeTime;
+			if (elapsed < std::chrono::seconds(2))
+				return;
+			m_uidJustChanged = false;
+		}
 
         // Compute packet CRC
         unsigned int dataCrc = 0;
