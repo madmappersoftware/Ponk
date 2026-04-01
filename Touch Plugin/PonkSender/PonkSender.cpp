@@ -350,11 +350,6 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 
 		// Get the Unique identifier from the attribute
 		int uid = inputs->getParInt("Uid");
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 4c48c4927a9973bad8ef0f7d63369f54bfc2444c
 
 		// If uid changed, start a 2-second cooldown before sending again
 		if (uid != m_lastUid && m_lastUid != -1)
@@ -371,10 +366,6 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 				return;
 			m_uidJustChanged = false;
 		}
-<<<<<<< HEAD
-=======
->>>>>>> d04c69cc23a97b229443360fedb41d8f83ce267c
->>>>>>> 4c48c4927a9973bad8ef0f7d63369f54bfc2444c
 
         // Compute packet CRC
         unsigned int dataCrc = 0;
