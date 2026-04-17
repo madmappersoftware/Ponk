@@ -298,44 +298,76 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 
 		for (int primitiveNumber = 0; primitiveNumber < sinput->getNumPrimitives(); primitiveNumber++)
 		{
-            // Write Format Data
-            fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8);
-
-			// Write meta data count
-			fullData.push_back(metadata.size());
-
 			const SOP_PrimitiveInfo primInfo = sinput->getPrimitive(primitiveNumber);
-
 			const int32_t* primVert = primInfo.pointIndices;
-
 			int numPoints = primInfo.numVertices;
 
-			for (const auto& kv : metadata) {
-				char charMetadata[9];
-				memset(charMetadata, 0, sizeof(charMetadata));
-				size_t copyLen = std::min<size_t>(kv.first.size(), 8u);
-				std::copy(kv.first.begin(), kv.first.begin() + copyLen, charMetadata);
-
-				pushMetaData(fullData, charMetadata, kv.second[primVert[0]]);
+			// Check if this primitive should be sent as individual points.
+			// ISPOINTS may be a float or integer attribute, so check both.
+			bool isPoints = false;
+			{
+				const SOP_CustomAttribData* isPointsAttrib = sinput->getCustomAttribute("ISPOINTS");
+				if (isPointsAttrib) {
+					if (isPointsAttrib->floatData)
+						isPoints = isPointsAttrib->floatData[primVert[0]] >= 0.5f;
+					else if (isPointsAttrib->intData)
+						isPoints = isPointsAttrib->intData[primVert[0]] != 0;
+				}
 			}
 
-			// check if the primitve is closed
-			if (primInfo.isClosed) {
-                // Write point count
-                push16bits(fullData, numPoints+1);
-            } else {
-                push16bits(fullData, numPoints);
-            }
+			if (isPoints) {
+				// Send each point as a separate single-point path
+				for (int pointNumber = 0; pointNumber < numPoints; pointNumber++) {
+					fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8);
+					fullData.push_back((unsigned char)metadata.size());
 
-			for (int pointNumber = 0; pointNumber < numPoints; pointNumber++) {
-				Position pointPosition = cameraTransProj * ptArr[primVert[pointNumber]];
-				pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[pointNumber]]:s_white);
-			}
+					for (const auto& kv : metadata) {
+						char charMetadata[9];
+						memset(charMetadata, 0, sizeof(charMetadata));
+						size_t copyLen = std::min<size_t>(kv.first.size(), 8u);
+						std::copy(kv.first.begin(), kv.first.begin() + copyLen, charMetadata);
+						pushMetaData(fullData, charMetadata, kv.second[primVert[pointNumber]]);
+					}
 
-			// If the primitive is close add the first point at the end
-			if (primInfo.isClosed) {
-				Position pointPosition = cameraTransProj * ptArr[primVert[0]];
-                pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[0]]:s_white);
+					push16bits(fullData, 1);
+
+					Position pointPosition = cameraTransProj * ptArr[primVert[pointNumber]];
+					pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[pointNumber]]:s_white);
+				}
+			} else {
+	            // Write Format Data
+	            fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8);
+
+				// Write meta data count
+				fullData.push_back(metadata.size());
+
+				for (const auto& kv : metadata) {
+					char charMetadata[9];
+					memset(charMetadata, 0, sizeof(charMetadata));
+					size_t copyLen = std::min<size_t>(kv.first.size(), 8u);
+					std::copy(kv.first.begin(), kv.first.begin() + copyLen, charMetadata);
+
+					pushMetaData(fullData, charMetadata, kv.second[primVert[0]]);
+				}
+
+				// check if the primitve is closed
+				if (primInfo.isClosed) {
+	                // Write point count
+	                push16bits(fullData, numPoints+1);
+	            } else {
+	                push16bits(fullData, numPoints);
+	            }
+
+				for (int pointNumber = 0; pointNumber < numPoints; pointNumber++) {
+					Position pointPosition = cameraTransProj * ptArr[primVert[pointNumber]];
+					pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[pointNumber]]:s_white);
+				}
+
+				// If the primitive is close add the first point at the end
+				if (primInfo.isClosed) {
+					Position pointPosition = cameraTransProj * ptArr[primVert[0]];
+	                pushPoint_XY_F32_RGB_U8(fullData, pointPosition, sinput->hasColors()?colors[primVert[0]]:s_white);
+				}
 			}
 		}
 
