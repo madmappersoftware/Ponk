@@ -36,6 +36,10 @@ void pushMetaData(std::vector<unsigned char>& fullData, const char (&eightCC)[9]
     push32bits(fullData,*(int*)&value);
 }
 
+void generateDataForCircleAndTriangleXYRGBU16(std::vector<unsigned char>& fullData, const double animTime);
+void generateDataForCircleAndTriangleFloat(std::vector<unsigned char>& fullData, const double animTime);
+void generateDataFor1000TrianglesFloat(std::vector<unsigned char>& fullData, const double animTime);
+
 int main()
 {
     std::cout << "Starting" << std::endl;
@@ -50,137 +54,9 @@ int main()
         std::vector<unsigned char> fullData;
         fullData.reserve(65536);
 
-        #ifdef USE_PONK_DATA_FORMAT_XYRGB_U16
-            // Generate circle data with 1024 points
-            fullData.push_back(PONK_DATA_FORMAT_XYRGB_U16); // Write Format Data
-
-            // Meta Data
-            fullData.push_back(2); // Write meta data count
-            pushMetaData(fullData,"PATHNUMB",1.f);
-            pushMetaData(fullData,"MAXSPEED",0.1f);
-
-            // Write point count - LSB first
-            #define CIRCLE_POINT_COUNT 1024
-            #define CIRCLE_MOVE_SIZE 0.2
-            #define CIRCLE_SIZE 0.5
-            push16bits(fullData,CIRCLE_POINT_COUNT);
-            // Write 1024 points
-            const auto circleCenterX = CIRCLE_MOVE_SIZE * cos(animTime*3);
-            const auto circleCenterY = CIRCLE_MOVE_SIZE * sin(animTime*3);
-            for (int i=0; i<1024; i++) {
-                // Be sure to close circle
-                const auto normalizedPosInCircle = double(i)/(CIRCLE_POINT_COUNT-1);
-                const auto x = circleCenterX + CIRCLE_SIZE * cos(normalizedPosInCircle*2*M_PI);
-                const auto y = circleCenterY + CIRCLE_SIZE * sin(normalizedPosInCircle*2*M_PI);
-                assert(x>=-1 && x<=1 && y>=-1 && y<=1);
-                const auto x16Bits = static_cast<unsigned short>(((x+1)/2) * 65535);
-                const auto y16Bits = static_cast<unsigned short>(((y+1)/2) * 65535);
-                // Push X - LSB first
-                push16bits(fullData,x16Bits);
-                // Push Y - LSB first
-                push16bits(fullData,y16Bits);
-                // Push R - LSB first
-                push16bits(fullData,0xFFFF);
-                // Push G - LSB first
-                push16bits(fullData,0xFFFF);
-                // Push B - LSB first
-                push16bits(fullData,0xFFFF);
-            }
-
-            // Generate a triangle with 4 points (to close it)
-            fullData.push_back(PONK_DATA_FORMAT_XYRGB_U16); // Write Format Data
-
-            // Meta Data
-            fullData.push_back(1); // Write meta data count
-            pushMetaData(fullData,"PATHNUMB",2.f);
-
-            // Write point count - LSB first
-            #define TRIANGLE_POINT_COUNT 4
-            #define TRIANGLE_SIZE 0.5
-            fullData.push_back((TRIANGLE_POINT_COUNT>>0) & 0xFF);
-            fullData.push_back((TRIANGLE_POINT_COUNT>>8) & 0xFF);
-            for (int i=0; i<TRIANGLE_POINT_COUNT; i++) {
-                const auto normalizedPosInTriangle = double(i)/(TRIANGLE_POINT_COUNT-1);
-                const auto x = TRIANGLE_SIZE * cos(normalizedPosInTriangle*2*M_PI);
-                const auto y = TRIANGLE_SIZE * sin(normalizedPosInTriangle*2*M_PI);
-                assert(x>=-1 && x<=1 && y>=-1 && y<=1);
-                const auto x16Bits = static_cast<unsigned short>(((x+1)/2) * 65535);
-                const auto y16Bits = static_cast<unsigned short>(((y+1)/2) * 65535);
-                // Push X - LSB first
-                push16bits(fullData,x16Bits);
-                // Push Y - LSB first
-                push16bits(fullData,y16Bits);
-                // Push R - LSB first
-                push16bits(fullData,0xFFFF);
-                // Push G - LSB first
-                push16bits(fullData,0);
-                // Push B - LSB first
-                push16bits(fullData,0);
-            }
-        #else
-            // Generate circle data with 1024 points
-            fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8); // Write Format Data
-
-            // Meta Data
-            fullData.push_back(2); // Write meta data count
-            pushMetaData(fullData,"PATHNUMB",1.f);
-            pushMetaData(fullData,"MAXSPEED",1.0f);
-
-            // Write point count - LSB first
-            #define CIRCLE_POINT_COUNT 4096
-            #define CIRCLE_MOVE_SIZE 0.2f
-            #define CIRCLE_SIZE 0.5f
-            push16bits(fullData,CIRCLE_POINT_COUNT);
-            // Write CIRCLE_POINT_COUNT points
-            const auto circleCenterX = CIRCLE_MOVE_SIZE * cos(animTime*3);
-            const auto circleCenterY = CIRCLE_MOVE_SIZE * sin(animTime*3);
-            for (int i=0; i<CIRCLE_POINT_COUNT; i++) {
-                // Be sure to close circle
-                const auto normalizedPosInCircle = double(i)/(CIRCLE_POINT_COUNT-1);
-                const auto x = static_cast<float>(circleCenterX + CIRCLE_SIZE * cos(normalizedPosInCircle*2*M_PI));
-                const auto y = static_cast<float>(circleCenterY + CIRCLE_SIZE * sin(normalizedPosInCircle*2*M_PI));
-                assert(x>=-1 && x<=1 && y>=-1 && y<=1);
-                // Push X - LSB first
-                push32bits(fullData,x);
-                // Push Y - LSB first
-                push32bits(fullData,y);
-                // Push R - LSB first
-                push8bits(fullData,0xFF);
-                // Push G - LSB first
-                push8bits(fullData,0xFF);
-                // Push B - LSB first
-                push8bits(fullData,0xFF);
-            }
-
-            // Generate a triangle with 4 points (to close it)
-            // Generate circle data with 1024 points
-            fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8); // Write Format Data
-
-            // Meta Data
-            fullData.push_back(1); // Write meta data count
-            pushMetaData(fullData,"PATHNUMB",2.f);
-
-            // Write point count - LSB first
-            #define TRIANGLE_POINT_COUNT 4
-            #define TRIANGLE_SIZE 0.5f
-            push16bits(fullData,TRIANGLE_POINT_COUNT);
-            for (int i=0; i<TRIANGLE_POINT_COUNT; i++) {
-                const auto normalizedPosInTriangle = double(i)/(TRIANGLE_POINT_COUNT-1);
-                const auto x = static_cast<float>(TRIANGLE_SIZE * cos(normalizedPosInTriangle*2*M_PI));
-                const auto y = static_cast<float>(TRIANGLE_SIZE * sin(normalizedPosInTriangle*2*M_PI));
-                assert(x>=-1 && x<=1 && y>=-1 && y<=1);
-                // Push X - LSB first
-                push32bits(fullData,x);
-                // Push Y - LSB first
-                push32bits(fullData,y);
-                // Push R - LSB first
-                push8bits(fullData,0xFF);
-                // Push G - LSB first
-                push8bits(fullData,0);
-                // Push B - LSB first
-                push8bits(fullData,0);
-            }
-        #endif
+        //generateDataForCircleAndTriangleXYRGBU16(fullData,animTime);
+        generateDataForCircleAndTriangleFloat(fullData,animTime);
+        //generateDataFor1000TrianglesFloat(fullData,animTime);
 
         // Compute necessary chunk count
         size_t chunksCount64 = 1 + fullData.size() / (PONK_MAX_CHUNK_SIZE-sizeof(GeomUdpHeader));
@@ -226,6 +102,8 @@ int main()
             GenericAddr destAddr;
             destAddr.family = AF_INET;
             // Unicast on localhost 127.0.0.1
+            //destAddr.ip = ((127<<24) + (0<<16) + (0<<8) + (1<<0));
+            // Multicast
             destAddr.ip = PONK_MULTICAST_IP;
             destAddr.port = PONK_PORT;
             socket.sendTo(destAddr, &packet.front(), static_cast<unsigned int>(packet.size()));
@@ -243,4 +121,177 @@ int main()
     }
 
     return 0;
+}
+
+void generateDataForCircleAndTriangleXYRGBU16(std::vector<unsigned char>& fullData, const double animTime)
+{
+    // Generate circle data with 1024 points
+    fullData.push_back(PONK_DATA_FORMAT_XYRGB_U16); // Write Format Data
+
+    // Meta Data
+    fullData.push_back(2); // Write meta data count
+    pushMetaData(fullData,"PATHNUMB",1.f);
+    pushMetaData(fullData,"MAXSPEED",0.1f);
+
+    // Write point count - LSB first
+    constexpr int kCirclePointCount = 1024;
+    constexpr float kCircleMoveSize = 0.2;
+    constexpr float kCircleSize = 0.5;
+
+    push16bits(fullData,kCirclePointCount);
+    // Write 1024 points
+    const auto circleCenterX = kCircleMoveSize * cos(animTime*3);
+    const auto circleCenterY = kCircleMoveSize * sin(animTime*3);
+    for (int i=0; i<1024; i++) {
+        // Be sure to close circle
+        const auto normalizedPosInCircle = double(i)/(kCirclePointCount-1);
+        const auto x = circleCenterX + kCircleSize * cos(normalizedPosInCircle*2*M_PI);
+        const auto y = circleCenterY + kCircleSize * sin(normalizedPosInCircle*2*M_PI);
+        assert(x>=-1 && x<=1 && y>=-1 && y<=1);
+        const auto x16Bits = static_cast<unsigned short>(((x+1)/2) * 65535);
+        const auto y16Bits = static_cast<unsigned short>(((y+1)/2) * 65535);
+        // Push X - LSB first
+        push16bits(fullData,x16Bits);
+        // Push Y - LSB first
+        push16bits(fullData,y16Bits);
+        // Push R - LSB first
+        push16bits(fullData,0xFFFF);
+        // Push G - LSB first
+        push16bits(fullData,0xFFFF);
+        // Push B - LSB first
+        push16bits(fullData,0xFFFF);
+    }
+
+    // Generate a triangle with 4 points (to close it)
+    fullData.push_back(PONK_DATA_FORMAT_XYRGB_U16); // Write Format Data
+
+    // Meta Data
+    fullData.push_back(1); // Write meta data count
+    pushMetaData(fullData,"PATHNUMB",2.f);
+
+    // Write point count - LSB first
+    constexpr int kTrianglePointCount = 4;
+    constexpr float kTriangleSize = 0.5;
+    fullData.push_back((kTrianglePointCount>>0) & 0xFF);
+    fullData.push_back((kTrianglePointCount>>8) & 0xFF);
+    for (int i=0; i<kTrianglePointCount; i++) {
+        const auto normalizedPosInTriangle = double(i)/(kTrianglePointCount-1);
+        const auto x = kTriangleSize * cos(normalizedPosInTriangle*2*M_PI);
+        const auto y = kTriangleSize * sin(normalizedPosInTriangle*2*M_PI);
+        assert(x>=-1 && x<=1 && y>=-1 && y<=1);
+        const auto x16Bits = static_cast<unsigned short>(((x+1)/2) * 65535);
+        const auto y16Bits = static_cast<unsigned short>(((y+1)/2) * 65535);
+        // Push X - LSB first
+        push16bits(fullData,x16Bits);
+        // Push Y - LSB first
+        push16bits(fullData,y16Bits);
+        // Push R - LSB first
+        push16bits(fullData,0xFFFF);
+        // Push G - LSB first
+        push16bits(fullData,0);
+        // Push B - LSB first
+        push16bits(fullData,0);
+    }
+}
+
+void generateDataForCircleAndTriangleFloat(std::vector<unsigned char>& fullData, const double animTime)
+{
+    // Generate circle data with  points
+    fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8); // Write Format Data
+
+    // Meta Data
+    fullData.push_back(2); // Write meta data count
+    pushMetaData(fullData,"PATHNUMB",1.f);
+    pushMetaData(fullData,"MAXSPEED",1.0f);
+
+    // Write point count - LSB first
+    constexpr int kCirclePointCount = 4096;
+    constexpr float kCircleMoveSize = 0.2f;
+    constexpr float kCircleSize = 0.5f;
+    push16bits(fullData,kCirclePointCount);
+    // Write CIRCLE_POINT_COUNT points
+    const auto circleCenterX = kCircleMoveSize * cos(animTime*3);
+    const auto circleCenterY = kCircleMoveSize * sin(animTime*3);
+    for (int i=0; i<kCirclePointCount; i++) {
+        // Be sure to close circle
+        const auto normalizedPosInCircle = double(i)/(kCirclePointCount-1);
+        const auto x = static_cast<float>(circleCenterX + kCircleSize * cos(normalizedPosInCircle*2*M_PI));
+        const auto y = static_cast<float>(circleCenterY + kCircleSize * sin(normalizedPosInCircle*2*M_PI));
+        assert(x>=-1 && x<=1 && y>=-1 && y<=1);
+        // Push X - LSB first
+        push32bits(fullData,x);
+        // Push Y - LSB first
+        push32bits(fullData,y);
+        // Push R - LSB first
+        push8bits(fullData,0xFF);
+        // Push G - LSB first
+        push8bits(fullData,0xFF);
+        // Push B - LSB first
+        push8bits(fullData,0xFF);
+    }
+
+    // Generate a triangle with 4 points (to close it)
+    fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8); // Write Format Data
+
+    // Meta Data
+    fullData.push_back(1); // Write meta data count
+    pushMetaData(fullData,"PATHNUMB",2.f);
+
+    // Write point count - LSB first
+    constexpr int kTriangePointCount = 4;
+    constexpr float kTriangleSize = 0.5f;
+    push16bits(fullData,kTriangePointCount);
+    for (int i=0; i<kTriangePointCount; i++) {
+        const auto normalizedPosInTriangle = double(i)/(kTriangePointCount-1);
+        const auto x = static_cast<float>(kTriangleSize * cos(normalizedPosInTriangle*2*M_PI));
+        const auto y = static_cast<float>(kTriangleSize * sin(normalizedPosInTriangle*2*M_PI));
+        assert(x>=-1 && x<=1 && y>=-1 && y<=1);
+        // Push X - LSB first
+        push32bits(fullData,x);
+        // Push Y - LSB first
+        push32bits(fullData,y);
+        // Push R - LSB first
+        push8bits(fullData,0xFF);
+        // Push G - LSB first
+        push8bits(fullData,0);
+        // Push B - LSB first
+        push8bits(fullData,0);
+    }
+}
+
+void generateDataFor1000TrianglesFloat(std::vector<unsigned char>& fullData, const double animTime)
+{
+    for (int triangleNumber = 0; triangleNumber < 1000; triangleNumber++) {
+        // Generate a triangle with 4 points (to close it)
+        fullData.push_back(PONK_DATA_FORMAT_XY_F32_RGB_U8); // Write Format Data
+
+        // Meta Data
+        fullData.push_back(1); // Write meta data count
+        pushMetaData(fullData,"PATHNUMB",2.f + triangleNumber);
+
+        constexpr float kMoveSize = 0.2f;
+        const float centerX = kMoveSize * cos(animTime*3 + triangleNumber);
+        const float centerY = kMoveSize * sin(animTime*3 + triangleNumber);
+
+        // Write point count - LSB first
+        constexpr int kTriangePointCount = 4;
+        constexpr float kTriangleSize = 0.5f;
+        push16bits(fullData,kTriangePointCount);
+        for (int i=0; i<kTriangePointCount; i++) {
+            const auto normalizedPosInTriangle = double(i)/(kTriangePointCount-1);
+            const auto x = static_cast<float>(kTriangleSize * cos(normalizedPosInTriangle*2*M_PI)) + centerX;
+            const auto y = static_cast<float>(kTriangleSize * sin(normalizedPosInTriangle*2*M_PI)) + centerY;
+            assert(x>=-1 && x<=1 && y>=-1 && y<=1);
+            // Push X - LSB first
+            push32bits(fullData,x);
+            // Push Y - LSB first
+            push32bits(fullData,y);
+            // Push R - LSB first
+            push8bits(fullData,0xFF);
+            // Push G - LSB first
+            push8bits(fullData,0);
+            // Push B - LSB first
+            push8bits(fullData,0);
+        }
+    }
 }
