@@ -1,0 +1,21 @@
+{
+  "name": "ponkjs",
+  "version": "1.0.0",
+  "license": "ISC",
+  "author": "ameisso",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "demon": "nodemon main.js"
+  },
+  "type": "module",
+  "author": {
+    "name": "ameisso",
+    "email": "ameisso@gmail.com"
+  },
+  "license": "ISC",
+  "description": "PonkJS",
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
