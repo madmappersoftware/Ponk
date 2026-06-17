@@ -36,6 +36,7 @@ inline bool ipStrToInt(std::string_view s, unsigned int& out) {
 
 struct NetworkInterface
 {
+    NetworkInterface(const std::string& ip, const unsigned int ipHostOrder): ip(ip), ipHostOrder(ipHostOrder) {}
     std::string  ip;              // dotted-decimal address
     unsigned int ipHostOrder = 0; // address in host byte order
 };

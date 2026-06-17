@@ -37,7 +37,7 @@ std::vector<NetworkInterface> listIPv4Interfaces()
         const auto* sin = reinterpret_cast<const sockaddr_in*>(ifa->ifa_addr);
         const unsigned int hostOrder = ntohl(sin->sin_addr.s_addr);
 
-        result.push_back(NetworkInterface{ipIntToStr(hostOrder), hostOrder});
+        result.push_back(NetworkInterface(ipIntToStr(hostOrder), hostOrder));
     }
 
     return result;
