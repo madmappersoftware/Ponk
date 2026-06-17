@@ -56,14 +56,45 @@ DestroySOPInstance(SOP_CPlusPlusBase* instance)
 
 PonkReceiver::PonkReceiver(const OP_NodeInfo* info)
 {
-	m_socket = new DatagramSocket(INADDR_ANY, PONK_PORT);
-	m_socket->joinMulticastGroup(PONK_MULTICAST_IP, INADDR_ANY);
+	startSocket(INADDR_ANY);
+}
+
+PonkReceiver::~PonkReceiver()
+{
+	stopSocket();
+}
+
+
+void
+PonkReceiver::startSocket(unsigned int interfaceIp)
+{
+	m_currentInterfaceIp = interfaceIp;
+	m_socketError.clear();
+
+	// the actual interface is selected via multicast membership not on the socket
+	m_socket = std::make_unique<DatagramSocket>(INADDR_ANY, PONK_PORT);
+
+	if (!m_socket->isInitialized())
+	{
+		m_socketError = "Failed to bind UDP socket on port " + std::to_string(PONK_PORT) +
+			" (already in use?).";
+		return;
+	}
+
+	if (!m_socket->joinMulticastGroup(PONK_MULTICAST_IP, interfaceIp))
+	{
+		m_socketError = "Failed to join multicast group " + ipIntToStr(PONK_MULTICAST_IP) +
+			" on interface " +
+			(interfaceIp == INADDR_ANY ? std::string("default") : ipIntToStr(interfaceIp)) + ".";
+		// still receives unicast even if the join failed
+	}
 
 	m_running = true;
 	m_receiveThread = std::thread(&PonkReceiver::receiveThreadFunc, this);
 }
 
-PonkReceiver::~PonkReceiver()
+void
+PonkReceiver::stopSocket()
 {
 	m_running = false;
 
@@ -72,10 +103,16 @@ PonkReceiver::~PonkReceiver()
 
 	if (m_socket)
 	{
-		m_socket->leaveMulticastGroup(PONK_MULTICAST_IP, INADDR_ANY);
-		delete m_socket;
-		m_socket = nullptr;
+		m_socket->leaveMulticastGroup(PONK_MULTICAST_IP, m_currentInterfaceIp);
+		m_socket.reset();
 	}
+}
+
+void
+PonkReceiver::restartSocket(unsigned int interfaceIp)
+{
+	stopSocket();
+	startSocket(interfaceIp);
 }
 
 void
@@ -359,6 +396,29 @@ PonkReceiver::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserve
 {
 	m_errorMessage.clear();
 
+	// apply the selected network interface, or default
+	{
+		const char* ifaceVal = inputs->getParString("Localaddress");
+		unsigned int desiredIp = INADDR_ANY;
+		bool parseFailed = false;
+		if (ifaceVal && ifaceVal[0] != '\0')
+		{
+			unsigned int parsed = 0;
+			if (ipStrToInt(ifaceVal, parsed))
+				desiredIp = parsed;
+			else
+				parseFailed = true;
+		}
+
+		if (!parseFailed && desiredIp != m_currentInterfaceIp)
+			restartSocket(desiredIp);
+
+		if (parseFailed)
+			m_errorMessage = std::string("Invalid local address: ") + ifaceVal;
+		else if (!m_socketError.empty())
+			m_errorMessage = m_socketError;
+	}
+
 	if (!inputs->getParInt("Active"))
 		return;
 
@@ -595,6 +655,16 @@ PonkReceiver::setupParameters(OP_ParameterManager* manager, void* reserved)
 		assert(res == OP_ParAppendResult::Success);
 	}
 
+	// Network interface selection 
+	{
+		OP_StringParameter sp;
+		sp.name = "Localaddress";
+		sp.label = "Local Address";
+		sp.defaultValue = "";
+		OP_ParAppendResult res = manager->appendDynamicStringMenu(sp);
+		assert(res == OP_ParAppendResult::Success);
+	}
+
 	// Sender selection (dynamic string menu populated in buildDynamicMenu)
 	{
 		OP_StringParameter sp;
@@ -628,6 +698,15 @@ PonkReceiver::pulsePressed(const char* name, void* reserved)
 void
 PonkReceiver::buildDynamicMenu(const OP_Inputs* inputs, OP_BuildDynamicMenuInfo* info, void* reserved1)
 {
+	if (strcmp(info->name, "Localaddress") == 0)
+	{
+		// Like the built-in network operators, list the local interface IPs;
+		// an empty field means all interfaces.
+		for (const NetworkInterface& ni : listIPv4Interfaces())
+			info->addMenuEntry(ni.ip.c_str(), ni.ip.c_str());
+		return;
+	}
+
 	if (strcmp(info->name, "Sender") != 0)
 		return;
 

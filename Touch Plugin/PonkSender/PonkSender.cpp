@@ -80,12 +80,30 @@ extern "C"
 
 PonkSender::PonkSender(const OP_NodeInfo* info) : myNodeInfo(info)
 {
-	socket = new DatagramSocket(INADDR_ANY, 0);
+	setupSocket(INADDR_ANY);
 }
 
 PonkSender::~PonkSender()
 {
-	delete socket;
+}
+
+void
+PonkSender::setupSocket(unsigned int interfaceIp)
+{
+	m_currentInterfaceIp = interfaceIp;
+	m_socketError.clear();
+
+	socket = std::make_unique<DatagramSocket>(interfaceIp, 0);
+
+	if (!socket->isInitialized())
+	{
+		m_socketError = "Failed to open send socket on interface " +
+			(interfaceIp == INADDR_ANY ? std::string("default") : ipIntToStr(interfaceIp)) +
+			" (valid address?).";
+		return;
+	}
+
+	socket->setMulticastInterface(interfaceIp);
 }
 
 void
@@ -237,6 +255,28 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 				"        par.expr = f\"{default_value} if not me.par.Camera else op(me.par.Camera.eval()).projection(1,1)[{matrix_row},{matrix_col}]\"\n";
 			PyRun_SimpleString(py.c_str());
 		}
+	}
+
+	{
+		const char* ifaceVal = inputs->getParString("Localaddress");
+		unsigned int desiredIp = INADDR_ANY;
+		bool parseFailed = false;
+		if (ifaceVal && ifaceVal[0] != '\0')
+		{
+			unsigned int parsed = 0;
+			if (ipStrToInt(ifaceVal, parsed))
+				desiredIp = parsed;
+			else
+				parseFailed = true;
+		}
+
+		if (!parseFailed && desiredIp != m_currentInterfaceIp)
+			setupSocket(desiredIp);
+
+		if (parseFailed)
+			m_errorMessage = std::string("Invalid local address: ") + ifaceVal;
+		else if (!m_socketError.empty())
+			m_errorMessage = m_socketError;
 	}
 
 	// Disable the netaddress parameter if multicast is enabled
@@ -418,11 +458,14 @@ PonkSender::execute(SOP_Output* output, const OP_Inputs* inputs, void* reserved)
 		}
 		// Unicast UDP
 		else {
-			// Get the ip address from the attribute
-			int ip[4];
-			inputs->getParInt4("Netaddress", ip[0], ip[1], ip[2], ip[3]);
+			const char* addrStr = inputs->getParString("Netaddress");
+			unsigned int ip = 0;
+			if (!addrStr || !ipStrToInt(addrStr, ip)) {
+				m_errorMessage = std::string("Invalid network address: ") + (addrStr ? addrStr : "");
+				return;
+			}
 			destAddr.family = AF_INET;
-			destAddr.ip = ((ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3]);
+			destAddr.ip = ip;
 			destAddr.port = PONK_PORT;
 		}
 
@@ -535,34 +578,26 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 		OP_ParAppendResult res = manager->appendToggle(np);
         assert(res == OP_ParAppendResult::Success);
 	}
-	// Ip
+	// Network Address: unicast destination IP
 	{
-		OP_NumericParameter	np;
+		OP_StringParameter sp;
+		sp.name = "Netaddress";
+		sp.label = "Network Address";
+		sp.page = "Parameters";
+		sp.defaultValue = "127.0.0.1";
+		OP_ParAppendResult res = manager->appendString(sp);
+		assert(res == OP_ParAppendResult::Success);
+	}
 
-		np.name = "Netaddress";
-		np.label = "Network Address";
-		np.page = "Parameters";
-
-		// Minimum values
-		np.minValues[0] = 0;
-		np.minValues[1] = 0;
-		np.minValues[2] = 0;
-		np.minValues[3] = 0;
-
-		// Maximum values
-		np.maxValues[0] = 255;
-		np.maxValues[1] = 255;
-		np.maxValues[2] = 255;
-		np.maxValues[3] = 255;
-
-		// Default value
-		np.defaultValues[0] = 127;
-		np.defaultValues[1] = 0;
-		np.defaultValues[2] = 0;
-		np.defaultValues[3] = 1;
-
-		OP_ParAppendResult res = manager->appendInt(np, 4);
-        assert(res == OP_ParAppendResult::Success);
+	// Network interface
+	{
+		OP_StringParameter sp;
+		sp.name = "Localaddress";
+		sp.label = "Local Address";
+		sp.page = "Parameters";
+		sp.defaultValue = "";
+		OP_ParAppendResult res = manager->appendDynamicStringMenu(sp);
+		assert(res == OP_ParAppendResult::Success);
 	}
 
 	// Unique ID (matches GeomUdpHeader.senderIdentifier: 32-bit; max 2147483647 because getParInt is int32_t)
@@ -679,6 +714,18 @@ PonkSender::setupParameters(OP_ParameterManager* manager, void* reserved)
 void
 PonkSender::pulsePressed(const char* name, void* reserved)
 {
+}
+
+void
+PonkSender::buildDynamicMenu(const OP_Inputs* inputs, OP_BuildDynamicMenuInfo* info, void* reserved1)
+{
+	if (strcmp(info->name, "Localaddress") != 0)
+		return;
+
+	// Like the built-in network operators, list the local interface IPs;
+	// an empty field means all interfaces.
+	for (const NetworkInterface& ni : listIPv4Interfaces())
+		info->addMenuEntry(ni.ip.c_str(), ni.ip.c_str());
 }
 
 void
