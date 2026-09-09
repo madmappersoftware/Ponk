@@ -95,7 +95,6 @@
  *          - CRC - unsigned int: sum of all data contained in this frame (of all chunks)
  *      - Data:
  *          - For each path:
- *              - Data format - unsigned char (PONK_DATA_FORMAT_XY_F32_RGB_U8...)
  *              - Meta Data count - unsigned char
  *                  - For each Meta Data:
  *                      - Key - char[8]
@@ -115,6 +114,9 @@
  *          - MAXSPEED: Floating point number defining the maximum laser scan speed for this shape. Normal value is 1.0
  *            and is a compromise between scan speed and scan accuracy at a reasonable projection angle. A value of 2 will
  *            tell MadMapper it can scan twice faster when rendering this shape.
+ *          - MINSPEED: Floating point number defining the minimum laser scan speed for this shape. Normal value is 1.0
+ *            and is a compromise between scan speed and scan accuracy at a reasonable projection angle. A value of 2 will
+ *            tell MadMapper it must scan at least twice faster when rendering this shape.
  *          - FIXSPEED: Floating point number defining the speed at which we will travel this path with the laser beam.
  *            Normal value is 1.0 and is a compromise between scan speed and scan accuracy at a reasonable projection
  *            angle. A value of 2 will tell MadMapper to scan twice faster when rendering this shape.
