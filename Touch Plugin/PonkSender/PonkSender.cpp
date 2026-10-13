@@ -54,6 +54,11 @@ extern "C"
 		info->customOPInfo.opHelpURL->setString("yourwebsiteurl.com");
 
 		info->customOPInfo.pythonVersion->setString(PY_VERSION);
+
+		// In TouchEngine, without any output used in the network, and 
+		// without viewers visible as they are in TouchDesigner, the 
+		// node never cooks unless you set this flag
+		info->customOPInfo.cookOnStart = true;
 	}
 
 	DLLEXPORT
