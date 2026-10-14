@@ -2,6 +2,7 @@
 #include <cstring>
 #include "errno.h"
 #include <iostream>
+#include <memory>
 
 /*********************************************************************************
   UNIX version
@@ -10,6 +11,37 @@
 #if defined(__linux__) || defined (__APPLE__)
 
 #include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+
+std::vector<NetworkInterface> listIPv4Interfaces()
+{
+    std::vector<NetworkInterface> result;
+
+    ifaddrs* rawList = nullptr;
+    if (getifaddrs(&rawList) != 0 || rawList == nullptr)
+        return result;
+
+    const std::unique_ptr<ifaddrs, decltype(&freeifaddrs)> list(rawList, &freeifaddrs);
+
+    for (const ifaddrs* ifa = list.get(); ifa != nullptr; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr == nullptr || ifa->ifa_addr->sa_family != AF_INET)
+            continue;
+        if ((ifa->ifa_flags & IFF_UP) == 0)
+            continue;
+        // keep loopback, skip interfaces that can't multicast or broadcast
+        if ((ifa->ifa_flags & (IFF_MULTICAST | IFF_LOOPBACK | IFF_BROADCAST)) == 0)
+            continue;
+
+        const auto* sin = reinterpret_cast<const sockaddr_in*>(ifa->ifa_addr);
+        const unsigned int hostOrder = ntohl(sin->sin_addr.s_addr);
+
+        result.push_back(NetworkInterface(ipIntToStr(hostOrder), hostOrder));
+    }
+
+    return result;
+}
 
 DatagramSocket::DatagramSocket(unsigned int interfaceIP, unsigned int port):
     m_port(port)
@@ -130,6 +162,16 @@ bool DatagramSocket::leaveMulticastGroup(unsigned int ip, unsigned int interface
     return true;
 }
 
+bool DatagramSocket::setMulticastInterface(unsigned int interfaceIP) {
+    struct in_addr addr;
+    addr.s_addr = htonl(interfaceIP); // 0 = default
+    if (setsockopt(m_socket, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof(addr)) != 0) {
+        std::cout << "Error in DatagramSocket: could not set IP_MULTICAST_IF, error: " << strerror(errno) << std::endl;
+        return false;
+    }
+    return true;
+}
+
 bool DatagramSocket::sendBroadcast(unsigned int port,void * buf,unsigned int buflen)
 {
     SOCKADDR_IN to;
@@ -207,6 +249,54 @@ bool DatagramSocket::recvFrom(GenericAddr & addr,void * buf,unsigned int & bufle
 #if defined(_WIN32)
 
 #include <cassert>
+#include <iphlpapi.h>
+#pragma comment(lib, "IPHLPAPI.lib")
+
+std::vector<NetworkInterface> listIPv4Interfaces()
+{
+    std::vector<NetworkInterface> result;
+
+    const ULONG family = AF_INET;
+    const ULONG flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST |
+                        GAA_FLAG_SKIP_DNS_SERVER;
+
+    ULONG bufLen = 15000;
+    std::vector<unsigned char> buffer;
+    PIP_ADAPTER_ADDRESSES adapters = nullptr;
+    DWORD ret = ERROR_BUFFER_OVERFLOW;
+    for (int attempt = 0; attempt < 3 && ret == ERROR_BUFFER_OVERFLOW; ++attempt)
+    {
+        buffer.resize(bufLen);
+        adapters = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(buffer.data());
+        ret = GetAdaptersAddresses(family, flags, nullptr, adapters, &bufLen);
+    }
+    if (ret != NO_ERROR)
+        return result;
+
+    for (const IP_ADAPTER_ADDRESSES* ad = adapters; ad != nullptr; ad = ad->Next)
+    {
+        if (ad->OperStatus != IfOperStatusUp)
+            continue;
+        // keep loopback, skip non-multicast adapters
+        if (ad->IfType != IF_TYPE_SOFTWARE_LOOPBACK &&
+            (ad->Flags & IP_ADAPTER_NO_MULTICAST) != 0)
+            continue;
+
+        for (const IP_ADAPTER_UNICAST_ADDRESS* ua = ad->FirstUnicastAddress; ua != nullptr; ua = ua->Next)
+        {
+            if (ua->Address.lpSockaddr == nullptr ||
+                ua->Address.lpSockaddr->sa_family != AF_INET)
+                continue;
+
+            const auto* sin = reinterpret_cast<const sockaddr_in*>(ua->Address.lpSockaddr);
+            const unsigned int hostOrder = ntohl(sin->sin_addr.s_addr);
+
+            result.push_back(NetworkInterface{ipIntToStr(hostOrder), hostOrder});
+        }
+    }
+
+    return result;
+}
 
 DatagramSocket::DatagramSocket(unsigned int interfaceIP, unsigned int port)
 {
@@ -367,6 +457,17 @@ bool DatagramSocket::leaveMulticastGroup(unsigned int ip, unsigned int interface
         }
     }
 
+    return true;
+}
+
+bool DatagramSocket::setMulticastInterface(unsigned int interfaceIP) {
+    struct in_addr addr;
+    addr.s_addr = htonl(interfaceIP); // 0 = default
+    if (setsockopt(m_socket, IPPROTO_IP, IP_MULTICAST_IF, (char *)&addr, sizeof(addr)) == SOCKET_ERROR) {
+        int osErr = WSAGetLastError();
+        std::cout << "Error in DatagramSocket: could not set IP_MULTICAST_IF (error " << std::to_string(osErr) << ")" << std::endl;
+        return false;
+    }
     return true;
 }
 

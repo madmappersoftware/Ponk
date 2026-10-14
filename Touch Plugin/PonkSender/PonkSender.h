@@ -24,6 +24,7 @@
 #include <map>
 #include <string>
 #include <chrono>
+#include <memory>
 #include "matrix.h"
 
 using namespace TD;
@@ -59,10 +60,13 @@ public:
 
 	virtual void setupParameters(OP_ParameterManager* manager, void* reserved) override;
 	virtual void pulsePressed(const char* name, void* reserved) override;
+	virtual void buildDynamicMenu(const OP_Inputs* inputs, OP_BuildDynamicMenuInfo* info, void* reserved1) override;
 
 	virtual void getErrorString(OP_String* error, void* reserved) override;
 
 private:
+
+	void setupSocket(unsigned int interfaceIp);
 	void push16bits(std::vector<unsigned char>& fullData, unsigned short value);
     void push32bits(std::vector<unsigned char>& fullData, int value);
     void pushFloat32(std::vector<unsigned char>& fullData, float value);
@@ -74,7 +78,11 @@ private:
 
 	Matrix44<double> buildCameraTransProjMatrix(const OP_Inputs* inputs);
 
-	DatagramSocket* socket;
+	std::unique_ptr<DatagramSocket> socket;
+
+	unsigned int m_currentInterfaceIp = INADDR_ANY;
+
+	std::string m_socketError;
 
 	std::vector<unsigned char> fullData;
 	std::vector<unsigned char> packet;

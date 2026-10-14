@@ -11,6 +11,7 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <memory>
 
 using namespace TD;
 
@@ -61,12 +62,22 @@ private:
 
 	void receiveThreadFunc();
 
+	void startSocket(unsigned int interfaceIp);
+
+	void stopSocket();
+
+	void restartSocket(unsigned int interfaceIp);
+
 	/// Parse a complete frame's data bytes into paths and store under m_mutex.
 	void parseAndStoreFrame(unsigned int senderIdentifier,
 							const char* senderName,
 							const std::vector<unsigned char>& data);
 
-	DatagramSocket* m_socket;
+	std::unique_ptr<DatagramSocket> m_socket;
+
+	unsigned int m_currentInterfaceIp = INADDR_ANY;
+
+	std::string m_socketError;
 
 	std::thread m_receiveThread;
 	std::atomic<bool> m_running{false};
